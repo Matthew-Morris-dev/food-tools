@@ -153,14 +153,14 @@ Open Food Facts data is crowd-sourced, so show a quick "check this looks right" 
 
 ## Tech stack
 
-Recommended: a React Native app built with Expo, backed by Supabase. One TypeScript codebase gives you iOS and Android, native barcode scanning, and room to add the daily planner as another module later.
+Decided (5 Oct 2026): a React Native app built with Expo, talking to a self-hosted TypeScript API and Postgres that run with `docker compose up` on a homelab. One TypeScript codebase gives you iOS and Android, native barcode scanning, and room to add the daily planner as another module later.
 
-| Layer | Recommended | Why | Alternative |
+| Layer | Choice | Why | Alternative |
 | --- | --- | --- | --- |
 | App | React Native + Expo | iOS and Android from one codebase; camera and barcode scanning built in; over-the-air updates | Progressive web app (Next.js): quicker to start, but barcode scanning and notifications are weaker on iPhone |
-| Local storage | SQLite on the device | Logging works offline and feels instant; syncs when online | — |
-| Backend | Supabase (Postgres, auth, storage) | Relational data fits this model well; row-level security keeps each user's data private; generous free tier | Firebase |
-| Server logic | Supabase Edge Functions | Food lookups, recipe import, list generation, and any AI calls run here so API keys never sit in the app | Small Node API on a host such as Railway or Fly.io |
+| Connectivity | Online-only for now; the app calls the API directly | Simplest to build; people are usually connected | SQLite on the device with sync, if offline logging becomes a need |
+| Backend | Postgres in Docker, Drizzle ORM for schema and migrations | Relational data fits this model well; one container, easy to back up | Self-hosted Supabase (around 10 containers) or PocketBase |
+| Server logic and auth | Hono API on Node with Better Auth (email and password), in Docker | Food lookups, recipe import, list generation, and any AI calls run here so API keys never sit in the app; same language and types as the app | Hosted Supabase |
 | Recipe import | Read schema.org Recipe data from the page, falling back to an AI parser | Most recipe sites publish structured recipe data | Manual entry only |
 | AI (optional) | Claude API for recipe parsing, label photos, week auto-fill | Handles messy text and images well | Rule-based only |
 

@@ -1,0 +1,14 @@
+{
+  "name": "food-tools",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:db": "docker compose -f docker-compose.yml -f compose.dev.yml up -d db",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:mobile": "npm run start -w apps/mobile",
+    "typecheck": "npm run typecheck -w apps/api && npm run typecheck -w apps/mobile",
+    "lint": "npm run lint -w apps/mobile"
+  }
+}

@@ -1,0 +1,41 @@
+name: food-tools
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: foodtools
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-foodtools}
+      POSTGRES_DB: foodtools
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U foodtools -d foodtools"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://foodtools:${POSTGRES_PASSWORD:-foodtools}@db:5432/foodtools
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
+      AUTH_SECRET_FILE: /data/auth-secret
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-}
+      DISABLE_SIGNUP: ${DISABLE_SIGNUP:-false}
+    volumes:
+      - api-data:/data
+    ports:
+      - "${API_PORT:-3000}:3000"
+
+volumes:
+  db-data:
+  api-data:
