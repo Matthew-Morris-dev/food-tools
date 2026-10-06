@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Button, ErrorText, Loading, TextField } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { api } from '@/lib/api';
+import { gtinFromScan } from '@/lib/gs1';
 import type { Slot } from '@/lib/types';
 
 export default function ScanScreen() {
@@ -16,6 +17,7 @@ export default function ScanScreen() {
   const [manual, setManual] = useState('');
   const [looking, setLooking] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const [notProduct, setNotProduct] = useState(false);
   // The camera fires many events per second; only handle the first
   const busy = useRef(false);
 
@@ -45,8 +47,13 @@ export default function ScanScreen() {
   }
 
   const onScanned = ({ data }: BarcodeScanningResult) => {
-    if (/^\d{6,14}$/.test(data)) void lookup(data);
+    const gtin = gtinFromScan(data);
+    if (gtin) void lookup(gtin);
+    // e.g. a QR code linking to a promotion; keep scanning
+    else setNotProduct(true);
   };
+
+  const manualGtin = gtinFromScan(manual);
 
   const camera =
     Platform.OS === 'web' ? null : !permission ? (
@@ -60,7 +67,8 @@ export default function ScanScreen() {
       <CameraView
         style={styles.camera}
         facing="back"
-        barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
+        // QR and DataMatrix cover the GS1 2D codes replacing linear barcodes on UK packs
+        barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'qr', 'datamatrix'] }}
         onBarcodeScanned={looking ? undefined : onScanned}
       />
     );
@@ -69,17 +77,22 @@ export default function ScanScreen() {
     <FormScreen>
       {camera}
       {looking && <Loading />}
+      {notProduct && !looking && (
+        <ThemedText type="small" themeColor="textSecondary">
+          That code isn&apos;t a product barcode. Try the barcode or GS1 QR code on the packet.
+        </ThemedText>
+      )}
       <ErrorText error={error} />
       <ThemedText type="small" themeColor="textSecondary">
-        Or type the numbers under the barcode:
+        Or type the numbers under the barcode, or paste a GS1 link:
       </ThemedText>
       <View style={styles.manual}>
-        <TextField value={manual} onChangeText={setManual} keyboardType="number-pad" placeholder="5000157024671" />
+        <TextField value={manual} onChangeText={setManual} autoCapitalize="none" autoCorrect={false} placeholder="5000157024671" />
         <Button
           title="Look up"
           variant="secondary"
-          onPress={() => lookup(manual.trim())}
-          disabled={!/^\d{6,14}$/.test(manual.trim())}
+          onPress={() => manualGtin && lookup(manualGtin)}
+          disabled={!manualGtin}
         />
       </View>
     </FormScreen>
