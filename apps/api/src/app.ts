@@ -1,19 +1,11 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { createMiddleware } from "hono/factory";
-import { HTTPException } from "hono/http-exception";
 
 import { auth } from "./auth";
 import { env } from "./env";
-
-type Session = typeof auth.$Infer.Session;
-
-const requireSession = createMiddleware<{ Variables: { session: Session } }>(async (c, next) => {
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  if (!session) throw new HTTPException(401, { message: "Not signed in" });
-  c.set("session", session);
-  await next();
-});
+import { requireSession } from "./middleware";
+import { foodRoutes } from "./routes/foods";
+import { logRoutes } from "./routes/log";
 
 export const app = new Hono()
   .use(
@@ -28,6 +20,8 @@ export const app = new Hono()
   .get("/api/me", requireSession, (c) => {
     const { user } = c.get("session");
     return c.json({ id: user.id, name: user.name, email: user.email });
-  });
+  })
+  .route("/api/foods", foodRoutes)
+  .route("/api/log", logRoutes);
 
 export type AppType = typeof app;

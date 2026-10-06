@@ -4,8 +4,10 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { app } from "./app";
 import { client, db } from "./db";
 import { env } from "./env";
+import { seedCofid } from "./seed";
 
 await migrate(db, { migrationsFolder: new URL("../drizzle", import.meta.url).pathname });
+await seedCofid();
 
 const server = serve({ fetch: app.fetch, port: env.port }, (info) => {
   console.log(`API listening on http://localhost:${info.port}`);

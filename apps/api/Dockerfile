@@ -17,6 +17,7 @@ COPY apps/mobile/package.json apps/mobile/
 RUN npm ci -w apps/api --omit=dev --ignore-scripts && npm cache clean --force
 COPY --from=build /repo/apps/api/dist apps/api/dist
 COPY apps/api/drizzle apps/api/drizzle
+COPY apps/api/data apps/api/data
 RUN mkdir /data && chown node:node /data
 USER node
 WORKDIR /repo/apps/api

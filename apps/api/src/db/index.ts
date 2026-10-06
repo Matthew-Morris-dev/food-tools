@@ -5,4 +5,4 @@ import { env } from "../env";
 import * as schema from "./schema";
 
 export const client = postgres(env.databaseUrl, { onnotice: () => {} });
-export const db = drizzle(client, { schema });
+export const db = drizzle(client, { schema, casing: "snake_case" });

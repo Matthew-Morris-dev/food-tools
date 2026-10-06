@@ -151,6 +151,8 @@ Use two free sources in v1: the UK government dataset for everyday generic foods
 
 Open Food Facts data is crowd-sourced, so show a quick "check this looks right" step on first scan and let you correct and save a product.
 
+As built (6 Oct 2026): Open Food Facts is also searchable by text, filtered to UK products, behind an explicit "Search Open Food Facts" button because its API allows about 10 searches a minute. Every product fetched is cached in the server's database, so it shows up in local search afterwards. Contributing corrections and new products back to Open Food Facts is planned; it needs an Open Food Facts account for the server to write with.
+
 ## Tech stack
 
 Decided (5 Oct 2026): a React Native app built with Expo, talking to a self-hosted TypeScript API and Postgres that run with `docker compose up` on a homelab. One TypeScript codebase gives you iOS and Android, native barcode scanning, and room to add the daily planner as another module later.

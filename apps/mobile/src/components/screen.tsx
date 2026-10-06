@@ -10,9 +10,11 @@ type ScreenProps = {
   title: string;
   headerRight?: ReactNode;
   children?: ReactNode;
+  // Rendered over the content, e.g. a floating button
+  overlay?: ReactNode;
 };
 
-export function Screen({ title, headerRight, children }: ScreenProps) {
+export function Screen({ title, headerRight, children, overlay }: ScreenProps) {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -24,6 +26,7 @@ export function Screen({ title, headerRight, children }: ScreenProps) {
           {children}
         </ScrollView>
       </SafeAreaView>
+      {overlay}
     </ThemedView>
   );
 }
@@ -44,7 +47,7 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
     padding: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
+    paddingBottom: BottomTabInset + Spacing.six * 2,
     gap: Spacing.three,
   },
   header: {

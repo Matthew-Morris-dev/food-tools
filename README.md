@@ -2,7 +2,7 @@
 
 Self-hosted calorie tracking, meal planning and shopping lists. One mobile app (Expo) talking to your own server (a small TypeScript API and Postgres in Docker). See [docs/SPEC.md](docs/SPEC.md) for the product spec and roadmap.
 
-Status: early. The app shell, sign-in and the five tabs (Today, Plan, Recipes, Shop, Progress) exist; the features behind them don't yet.
+Status: early. The calorie counter works: search, barcode scan, quick add, custom foods, and a daily log by meal. Goals, the meal planner and the shopping list are next.
 
 ## Run the server
 
@@ -34,6 +34,13 @@ For a phone on your network, create `apps/mobile/.env` from `apps/mobile/.env.ex
 | `apps/mobile` | Expo app (Expo Router, screens under `src/app`) |
 | `docs/SPEC.md` | Product spec |
 
+The generic food list in `apps/api/data/cofid.json` is built from the CoFID spreadsheet with `npm run build:cofid -w apps/api`, and loads into the database when the API starts.
+
 After changing the schema in `apps/api/src/db`, run `npm run db:generate -w apps/api` to create a migration. Migrations apply automatically when the API starts.
 
 Checks: `npm run typecheck` and `npm run lint`.
+
+## Food data
+
+- Generic foods: McCance and Widdowson's Composition of Foods Integrated Dataset 2021 ([CoFID](https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid)). Contains public sector information licensed under the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
+- Packaged foods: [Open Food Facts](https://world.openfoodfacts.org), available under the [Open Database Licence](https://opendatacommons.org/licenses/odbl/1-0/). Products are fetched on demand (barcode scans and explicit searches) and cached in your own database.
