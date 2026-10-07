@@ -7,7 +7,11 @@ import { z } from "zod";
 import { db } from "../db";
 import { foodLogEntries, foods, recipeIngredients, recipes } from "../db/schema";
 import { requireSession, type AuthEnv } from "../middleware";
+import { extractRecipe } from "../recipes/extract";
+import { FetchBlockedError, fetchPage } from "../recipes/fetch-page";
+import { buildDraft } from "../recipes/import";
 import { portion, recipeNutrition } from "../recipes/nutrition";
+import { parseRecipeText } from "../recipes/text";
 import { visibleTo } from "./foods";
 
 const idParam = zValidator("param", z.object({ id: z.uuid() }));
@@ -163,6 +167,38 @@ export const recipeRoutes = new Hono<AuthEnv>()
           return { ...rest, ingredientCount: ingredients.length, method: undefined };
         }),
       );
+    },
+  )
+
+  // Reads a recipe from a web page or pasted text and returns a draft to review.
+  // Nothing is saved until the user saves it like any other recipe.
+  .post(
+    "/import",
+    zValidator("json", z.union([z.object({ url: z.string().trim().max(2000) }), z.object({ text: z.string().trim().min(10).max(30000) })])),
+    async (c) => {
+      const userId = c.get("session").user.id;
+      const body = c.req.valid("json");
+
+      if ("text" in body) {
+        const parsed = parseRecipeText(body.text);
+        if (parsed.ingredients.length === 0) {
+          throw new HTTPException(422, { message: "Couldn't find any ingredients in that text. Put each ingredient on its own line, with its amount first." });
+        }
+        return c.json(await buildDraft(userId, parsed, null));
+      }
+
+      let html: string;
+      try {
+        html = await fetchPage(body.url);
+      } catch (err) {
+        const message = err instanceof FetchBlockedError ? err.message : "Couldn't read that page. Paste the recipe text instead.";
+        throw new HTTPException(err instanceof FetchBlockedError ? 400 : 502, { message });
+      }
+      const extracted = extractRecipe(html);
+      if (!extracted) {
+        throw new HTTPException(422, { message: "Couldn't find a recipe on that page. Try pasting the recipe text instead." });
+      }
+      return c.json(await buildDraft(userId, { ...extracted }, body.url));
     },
   )
 

@@ -9,7 +9,7 @@ import { foodLogEntries, foods } from "../db/schema";
 import { requireSession, type AuthEnv } from "../middleware";
 import { lookupBarcode, searchProducts } from "../open-food-facts";
 
-const foodColumns = {
+export const foodColumns = {
   id: foods.id,
   source: foods.source,
   name: foods.name,
