@@ -182,3 +182,32 @@ export const useCreateRecipe = () => useRecipeMutation(api.createRecipe);
 export const useUpdateRecipe = () => useRecipeMutation(api.updateRecipe);
 export const useDeleteRecipe = () => useRecipeMutation(api.deleteRecipe);
 export const useLogRecipe = () => useLogMutation(api.logRecipe);
+
+export const usePlan = (date: string) => useQuery({ queryKey: ['plan', 'week', date], queryFn: () => api.plan(date) });
+export const usePlanDay = (date: string) => useQuery({ queryKey: ['plan', 'day', date], queryFn: () => api.planDay(date) });
+
+// Planning changes the grid and Today's planned block; logging also changes the diary
+function usePlanMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>, alsoDiary = false) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['plan'] });
+      if (alsoDiary) {
+        void client.invalidateQueries({ queryKey: ['log'] });
+        void client.invalidateQueries({ queryKey: ['foods', 'recent'] });
+      }
+    },
+  });
+}
+
+export const useAddPlanEntry = () => usePlanMutation(api.addPlanEntry);
+export const useUpdatePlanEntry = () => usePlanMutation(api.updatePlanEntry);
+export const useDeletePlanEntry = () => usePlanMutation(api.deletePlanEntry);
+export const useDeletePlanEntries = () => usePlanMutation(api.deletePlanEntries);
+export const useFitPlanDay = () => usePlanMutation(api.fitPlanDay);
+export const useLogPlanEntry = () => usePlanMutation(api.logPlanEntry, true);
+export const useLogPlanDay = () => usePlanMutation(api.logPlanDay, true);
+
+export const usePlannerSettings = () => useQuery({ queryKey: ['plan', 'settings'], queryFn: api.plannerSettings });
+export const useSavePlannerSettings = () => usePlanMutation(api.savePlannerSettings);

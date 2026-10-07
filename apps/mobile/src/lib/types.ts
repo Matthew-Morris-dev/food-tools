@@ -181,9 +181,13 @@ export type RecipeIngredient = {
   kcal?: number;
 };
 
+export type RecipePreference = 'like' | 'neutral' | 'dislike';
+
 export type RecipeInput = {
   name: string;
   servings: number;
+  slots: Slot[];
+  preference: RecipePreference;
   method: string;
   tags: string[];
   cookedWeightG: number | null;
@@ -201,3 +205,45 @@ export type Recipe = Omit<RecipeInput, 'ingredients'> & {
 };
 
 export type RecipeListItem = Omit<Recipe, 'ingredients' | 'totals' | 'method'> & { ingredientCount: number };
+
+export type PlanEntry = {
+  id: string;
+  date: string;
+  slot: Slot;
+  recipeId: string | null;
+  foodId: string | null;
+  servings: number | null;
+  grams: number | null;
+  leftoverOfId: string | null;
+  locked: boolean;
+  logEntryId: string | null;
+  confirmed: boolean;
+  name: string;
+  brand: string | null;
+  macros: Targets;
+  warnings: string[];
+  incomplete: boolean;
+};
+
+export type PlanDay = {
+  date: string;
+  targets: Targets | null;
+  trainingDay: boolean;
+  totals: Targets;
+  entries: PlanEntry[];
+};
+
+export type PlannerSettings = { diets: string[]; excludedWords: string[] };
+
+export type PlanWeek = { weekStart: string; days: PlanDay[]; settings: PlannerSettings };
+
+export type NewPlanEntry = {
+  date: string;
+  slot: Slot;
+  recipeId?: string;
+  foodId?: string;
+  servings?: number;
+  grams?: number;
+  leftoverOfId?: string;
+  locked?: boolean;
+};

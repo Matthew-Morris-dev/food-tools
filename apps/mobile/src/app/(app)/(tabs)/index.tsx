@@ -2,17 +2,18 @@ import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
+import { ProgressBar } from '@/components/progress-bar';
 import { Placeholder, Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Card, Chip, ErrorText, Loading } from '@/components/ui';
+import { Button, Card, Chip, ErrorText, Loading } from '@/components/ui';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { authClient } from '@/lib/auth-client';
 import { addDays, dayLabel, today } from '@/lib/dates';
 import { activityLabel, fmt, SLOTS, slotForNow, sum } from '@/lib/nutrition';
-import { useDayLog, useDayTargets, useDeleteExercise, useExercise, useSetTrainingDay } from '@/lib/queries';
-import type { LogEntry, Slot } from '@/lib/types';
+import { useDayLog, useDayTargets, useDeleteExercise, useExercise, useLogPlanDay, useLogPlanEntry, usePlanDay, useSetTrainingDay } from '@/lib/queries';
+import type { LogEntry, PlanEntry, Slot } from '@/lib/types';
 
 export default function TodayScreen() {
   const theme = useTheme();
@@ -24,6 +25,9 @@ export default function TodayScreen() {
   const setTrainingDay = useSetTrainingDay();
   const { data: exercise } = useExercise(date);
   const deleteExercise = useDeleteExercise();
+  const { data: planned } = usePlanDay(date);
+  const logPlanned = useLogPlanEntry();
+  const logAllPlanned = useLogPlanDay();
 
   const add = (slot: Slot) => router.push({ pathname: '/log/add', params: { date, slot } });
   const totals = sum(entries ?? []);
@@ -103,7 +107,15 @@ export default function TodayScreen() {
         )}
       </Card>
 
-      <ErrorText error={error} />
+      {(planned?.length ?? 0) > 0 && (
+        <Button
+          title={`Log all planned meals (${planned!.length})`}
+          variant="secondary"
+          loading={logAllPlanned.isPending}
+          onPress={() => logAllPlanned.mutate(date)}
+        />
+      )}
+      <ErrorText error={error ?? logPlanned.error ?? logAllPlanned.error} />
       {isPending ? (
         <Loading />
       ) : (
@@ -112,6 +124,8 @@ export default function TodayScreen() {
             key={value}
             label={label}
             entries={(entries ?? []).filter((e) => e.slot === value)}
+            planned={(planned ?? []).filter((e) => e.slot === value)}
+            onLogPlanned={(id) => logPlanned.mutate({ id })}
             onAdd={() => add(value)}
             onSave={() => router.push({ pathname: '/meals/new', params: { date, slot: value } })}
           />
@@ -160,17 +174,6 @@ export default function TodayScreen() {
   );
 }
 
-// Neutral colours throughout: going over a target is information, not an error
-function ProgressBar({ value, target }: { value: number; target: number }) {
-  const theme = useTheme();
-  const pct = Math.min(100, target > 0 ? (value / target) * 100 : 0);
-  return (
-    <View style={[styles.bar, { backgroundColor: theme.backgroundSelected }]}>
-      <View style={[styles.barFill, { width: `${pct}%`, backgroundColor: theme.text }]} />
-    </View>
-  );
-}
-
 function Macro({ label, grams, target }: { label: string; grams: number; target?: number }) {
   return (
     <View>
@@ -182,9 +185,16 @@ function Macro({ label, grams, target }: { label: string; grams: number; target?
   );
 }
 
-type SlotSectionProps = { label: string; entries: LogEntry[]; onAdd: () => void; onSave: () => void };
+type SlotSectionProps = {
+  label: string;
+  entries: LogEntry[];
+  planned: PlanEntry[];
+  onAdd: () => void;
+  onSave: () => void;
+  onLogPlanned: (id: string) => void;
+};
 
-function SlotSection({ label, entries, onAdd, onSave }: SlotSectionProps) {
+function SlotSection({ label, entries, planned, onAdd, onSave, onLogPlanned }: SlotSectionProps) {
   const kcal = sum(entries).kcal;
   return (
     <View style={styles.section}>
@@ -208,6 +218,21 @@ function SlotSection({ label, entries, onAdd, onSave }: SlotSectionProps) {
           </Pressable>
         </View>
       </View>
+      {planned.map((p) => (
+        <View key={p.id} style={styles.entry}>
+          <View style={styles.entryText}>
+            <ThemedText numberOfLines={1} themeColor="textSecondary">
+              {p.name}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Planned · {p.recipeId ? `${fmt(p.servings ?? 0)} ${p.servings === 1 ? 'serving' : 'servings'}` : `${fmt(p.grams ?? 0)} g`} · {fmt(p.macros.kcal)} kcal
+            </ThemedText>
+          </View>
+          <Pressable onPress={() => onLogPlanned(p.id)} hitSlop={8}>
+            <ThemedText type="linkPrimary">Log</ThemedText>
+          </Pressable>
+        </View>
+      ))}
       {entries.map((entry) => (
         <Pressable
           key={entry.id}
@@ -243,8 +268,6 @@ const styles = StyleSheet.create({
   },
   macros: { flexDirection: 'row', gap: Spacing.five },
   chipRow: { flexDirection: 'row' },
-  bar: { height: 8, borderRadius: 4, overflow: 'hidden' },
-  barFill: { height: 8, borderRadius: 4 },
   section: { gap: Spacing.one },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionActions: { flexDirection: 'row', gap: Spacing.four },

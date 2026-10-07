@@ -13,6 +13,11 @@ import type {
   GoalPlan,
   LogEntry,
   NewCustomFood,
+  NewPlanEntry,
+  PlanDay,
+  PlanEntry,
+  PlanWeek,
+  PlannerSettings,
   Profile,
   Progress,
   ProgressRange,
@@ -118,4 +123,18 @@ export const api = {
   importOptions: () => apiFetch<{ claude: boolean }>('/api/recipes/import-options'),
   importRecipe: (source: ({ url: string } | { text: string }) & { useClaude?: boolean }) =>
     apiFetch<Draft>('/api/recipes/import', json('POST', source)),
+
+  plan: (date: string) => apiFetch<PlanWeek>(`/api/plan?date=${date}`),
+  planDay: (date: string) => apiFetch<PlanEntry[]>(`/api/plan/day/${date}`),
+  addPlanEntry: (entry: NewPlanEntry) => apiFetch<PlanEntry>('/api/plan/entries', json('POST', entry)),
+  updatePlanEntry: ({ id, ...changes }: { id: string; date?: string; slot?: Slot; servings?: number; grams?: number; locked?: boolean }) =>
+    apiFetch<PlanEntry>(`/api/plan/entries/${id}`, json('PATCH', changes)),
+  deletePlanEntry: (id: string) => apiFetch<void>(`/api/plan/entries/${id}`, { method: 'DELETE' }),
+  deletePlanEntries: (ids: string[]) => apiFetch<{ deleted: number }>('/api/plan/entries/delete', json('POST', { ids })),
+  fitPlanDay: (date: string) => apiFetch<{ day: PlanDay; clamped: boolean }>(`/api/plan/days/${date}/fit`, { method: 'POST' }),
+  logPlanEntry: ({ id, ...overrides }: { id: string; slot?: Slot; servings?: number; grams?: number }) =>
+    apiFetch<LogEntry>(`/api/plan/entries/${id}/log`, json('POST', overrides)),
+  logPlanDay: (date: string) => apiFetch<LogEntry[]>(`/api/plan/days/${date}/log`, { method: 'POST' }),
+  plannerSettings: () => apiFetch<PlannerSettings & { presets: { id: string; label: string }[] }>('/api/plan/settings'),
+  savePlannerSettings: (settings: PlannerSettings) => apiFetch<PlannerSettings>('/api/plan/settings', json('PUT', settings)),
 };

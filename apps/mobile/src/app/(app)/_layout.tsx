@@ -15,6 +15,8 @@ export default function AppLayout() {
       <Stack.Screen name="weights/index" options={{ title: 'Weigh-ins' }} />
       <Stack.Screen name="weights/log" options={{ title: 'Log weight' }} />
       <Stack.Screen name="exercise/add" options={{ title: 'Add exercise' }} />
+      <Stack.Screen name="plan/add" options={{ title: 'Add to plan' }} />
+      <Stack.Screen name="plan/entry/[id]" options={{ title: 'Planned meal' }} />
       <Stack.Screen name="check-in" options={{ title: 'Weekly check-in' }} />
       <Stack.Screen name="support" options={{ title: 'Support' }} />
       <Stack.Screen name="foods/pick" options={{ title: 'Choose a food' }} />

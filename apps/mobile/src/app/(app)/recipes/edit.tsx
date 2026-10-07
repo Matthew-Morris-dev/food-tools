@@ -7,11 +7,11 @@ import { NutritionSummary } from '@/components/nutrition-summary';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Chip, ChipRow, ErrorText, Loading, TextField } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
-import { fmt, forGrams, parseNumber, sum } from '@/lib/nutrition';
+import { fmt, forGrams, parseNumber, SLOTS, sum } from '@/lib/nutrition';
 import { pickFood } from '@/lib/pick-food';
 import { useCreateRecipe, useRecipe, useUpdateRecipe } from '@/lib/queries';
 import { takeDraft, type Draft } from '@/lib/recipe-draft';
-import type { Food, Recipe } from '@/lib/types';
+import type { Food, Recipe, RecipePreference, Slot } from '@/lib/types';
 
 type Row = {
   key: string;
@@ -39,6 +39,8 @@ type Initial = {
   tags: string[];
   method: string;
   sourceUrl: string | null;
+  slots: Slot[];
+  preference: RecipePreference;
   rows: Row[];
   warnings: string[];
   siteKcal: number | null;
@@ -53,6 +55,8 @@ function fromRecipe(r: Recipe): Initial {
     tags: r.tags,
     method: r.method,
     sourceUrl: r.sourceUrl,
+    slots: r.slots,
+    preference: r.preference,
     warnings: [],
     siteKcal: null,
     rows: r.ingredients.map((i) => ({
@@ -78,6 +82,8 @@ function fromDraft(d: Draft): Initial {
     tags: d.tags,
     method: d.method,
     sourceUrl: d.sourceUrl,
+    slots: d.slots ?? ['lunch', 'dinner'],
+    preference: 'neutral',
     warnings: d.warnings ?? [],
     siteKcal: d.siteNutrition?.kcal ?? null,
     rows: d.ingredients.map((i) => ({
@@ -103,6 +109,8 @@ const blank: Initial = {
   tags: [],
   method: '',
   sourceUrl: null,
+  slots: ['lunch', 'dinner'],
+  preference: 'neutral',
   rows: [],
   warnings: [],
   siteKcal: null,
@@ -132,6 +140,8 @@ function Editor({ initial, title }: { initial: Initial; title: string }) {
   const [cookedText, setCookedText] = useState(initial.cookedWeightG ? String(initial.cookedWeightG) : '');
   const [tagsText, setTagsText] = useState(initial.tags.join(', '));
   const [method, setMethod] = useState(initial.method);
+  const [slots, setSlots] = useState<Slot[]>(initial.slots);
+  const [preference, setPreference] = useState<RecipePreference>(initial.preference);
   const [rows, setRows] = useState<Row[]>(initial.rows);
   const create = useCreateRecipe();
   const update = useUpdateRecipe();
@@ -196,6 +206,8 @@ function Editor({ initial, title }: { initial: Initial; title: string }) {
       method,
       tags: tagsText.split(',').map((t) => t.trim()).filter(Boolean),
       cookedWeightG: cooked,
+      slots,
+      preference,
       sourceUrl: initial.sourceUrl,
       ingredients: rows.map((r) => {
         const grams = parseNumber(r.gramsText)!;
@@ -235,6 +247,26 @@ function Editor({ initial, title }: { initial: Initial; title: string }) {
         <TextField label="Cooked weight (g, optional)" value={cookedText} onChangeText={setCookedText} keyboardType="decimal-pad" />
       </View>
       <TextField label="Tags (comma separated)" value={tagsText} onChangeText={setTagsText} autoCapitalize="none" placeholder="dinner, quick" />
+
+      <ThemedText type="smallBold">Suits</ThemedText>
+      <ChipRow>
+        {SLOTS.map((o) => (
+          <Chip
+            key={o.value}
+            label={o.label}
+            selected={slots.includes(o.value)}
+            onPress={() => setSlots((prev) => (prev.includes(o.value) ? prev.filter((x) => x !== o.value) : [...prev, o.value]))}
+          />
+        ))}
+      </ChipRow>
+      <ThemedText type="small" themeColor="textSecondary">
+        The meal planner only suggests this recipe for the meals you pick.
+      </ThemedText>
+      <ChipRow>
+        {(['like', 'neutral', 'dislike'] as const).map((p) => (
+          <Chip key={p} label={{ like: 'Like it', neutral: 'It’s OK', dislike: 'Avoid' }[p]} selected={preference === p} onPress={() => setPreference(p)} />
+        ))}
+      </ChipRow>
 
       <ThemedText type="smallBold">Per serving</ThemedText>
       {perServing && <NutritionSummary {...perServing} />}
