@@ -213,3 +213,8 @@ export const usePlannerSettings = () => useQuery({ queryKey: ['plan', 'settings'
 export const useSavePlannerSettings = () => usePlanMutation(api.savePlannerSettings);
 
 export const useAutofillPlan = () => usePlanMutation(api.autofillPlan);
+
+export const usePlanTemplates = () => useQuery({ queryKey: ['plan', 'templates'], queryFn: api.planTemplates });
+export const useSaveTemplate = () => usePlanMutation(api.saveTemplate);
+export const useDeleteTemplate = () => usePlanMutation(api.deleteTemplate);
+export const useApplyTemplate = () => usePlanMutation(api.applyTemplate);

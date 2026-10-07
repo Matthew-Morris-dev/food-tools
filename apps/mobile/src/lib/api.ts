@@ -146,4 +146,9 @@ export const api = {
       skipped: { date: string; slot: Slot; reason: string }[];
       excluded: { incomplete: number; disliked: number; diet: number };
     }>('/api/plan/autofill', json('POST', body)),
+  planTemplates: () => apiFetch<{ id: string; name: string; entries: number }[]>('/api/plan/templates'),
+  saveTemplate: (body: { name: string; date: string }) => apiFetch<{ id: string; name: string; entries: number }>('/api/plan/templates', json('POST', body)),
+  deleteTemplate: (id: string) => apiFetch<void>(`/api/plan/templates/${id}`, { method: 'DELETE' }),
+  applyTemplate: ({ id, ...body }: { id: string; date: string; replace: boolean }) =>
+    apiFetch<{ ids: string[]; added: number; skipped: number; replaced: number }>(`/api/plan/templates/${id}/apply`, json('POST', body)),
 };

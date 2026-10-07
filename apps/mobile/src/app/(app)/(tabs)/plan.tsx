@@ -39,6 +39,7 @@ export default function PlanScreen() {
 
       <View style={styles.actions}>
         <Button title="Auto-fill week" style={styles.action} onPress={() => router.push({ pathname: '/plan/autofill', params: { anchor } })} />
+        <Button title="Templates" variant="secondary" style={styles.action} onPress={() => router.push({ pathname: '/plan/templates', params: { anchor } })} />
       </View>
 
       <ErrorText error={error} />

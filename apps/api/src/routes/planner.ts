@@ -1,11 +1,12 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, between, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, between, count, eq, inArray, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
 import { db } from "../db";
-import { foodLogEntries, foods, mealPlanEntries, plannerSettings } from "../db/schema";
+import { foodLogEntries, foods, mealPlanEntries, planTemplateEntries, planTemplates, plannerSettings } from "../db/schema";
+import { templateToWeek, weekToTemplate } from "../planner/templates";
 import { weekDates } from "../dates";
 import { autoFill, type Candidate } from "../planner/autofill";
 import { dayTargetsInRange } from "../goals/day";
@@ -320,6 +321,128 @@ export const plannerRoutes = new Hono<AuthEnv>()
       });
     },
   )
+
+  .get("/templates", async (c) => {
+    const userId = c.get("session").user.id;
+    const rows = await db
+      .select({ id: planTemplates.id, name: planTemplates.name, createdAt: planTemplates.createdAt, entries: count(planTemplateEntries.id) })
+      .from(planTemplates)
+      .leftJoin(planTemplateEntries, eq(planTemplateEntries.templateId, planTemplates.id))
+      .where(eq(planTemplates.userId, userId))
+      .groupBy(planTemplates.id)
+      .orderBy(asc(planTemplates.name));
+    return c.json(rows);
+  })
+
+  // Saves the week containing `date` (everything planned in it, eaten or not)
+  .post("/templates", zValidator("json", z.object({ name: z.string().trim().min(1).max(80), date: day })), async (c) => {
+    const userId = c.get("session").user.id;
+    const { name, date } = c.req.valid("json");
+    const dates = weekDates(date);
+    const rows = await db
+      .select()
+      .from(mealPlanEntries)
+      .where(and(eq(mealPlanEntries.userId, userId), between(mealPlanEntries.date, dates[0], dates[6])));
+    if (rows.length === 0) throw new HTTPException(400, { message: "Plan some meals in this week first" });
+
+    const entries = weekToTemplate(dates[0], rows);
+    const id = await db.transaction(async (tx) => {
+      const [template] = await tx.insert(planTemplates).values({ userId, name }).returning({ id: planTemplates.id });
+      const ids: string[] = [];
+      for (const e of entries) {
+        const [row] = await tx
+          .insert(planTemplateEntries)
+          .values({
+            templateId: template.id,
+            dayOffset: e.dayOffset,
+            slot: e.slot,
+            recipeId: e.recipeId,
+            foodId: e.foodId,
+            servings: e.servings,
+            grams: e.grams,
+            locked: e.locked,
+            leftoverOfId: e.leftoverOfIndex !== null ? ids[e.leftoverOfIndex] : null,
+          })
+          .returning({ id: planTemplateEntries.id });
+        ids.push(row.id);
+      }
+      return template.id;
+    });
+    return c.json({ id, name, entries: entries.length }, 201);
+  })
+
+  .delete("/templates/:id", idParam, async (c) => {
+    const [deleted] = await db
+      .delete(planTemplates)
+      .where(and(eq(planTemplates.id, c.req.valid("param").id), eq(planTemplates.userId, c.get("session").user.id)))
+      .returning({ id: planTemplates.id });
+    if (!deleted) throw new HTTPException(404, { message: "Template not found" });
+    return c.body(null, 204);
+  })
+
+  // Lays a template onto a week. Occupied slots are skipped unless `replace` clears
+  // the week's unlocked, uneaten meals first.
+  .post("/templates/:id/apply", idParam, zValidator("json", z.object({ date: day, replace: z.boolean().default(false) })), async (c) => {
+    const userId = c.get("session").user.id;
+    const { date, replace } = c.req.valid("json");
+    const [template] = await db
+      .select()
+      .from(planTemplates)
+      .where(and(eq(planTemplates.id, c.req.valid("param").id), eq(planTemplates.userId, userId)));
+    if (!template) throw new HTTPException(404, { message: "Template not found" });
+
+    const rows = await db.select().from(planTemplateEntries).where(eq(planTemplateEntries.templateId, template.id));
+    // Same order the template was saved in: cooks before leftovers
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const ordered = [...rows].sort((a, b) => Number(a.leftoverOfId !== null) - Number(b.leftoverOfId !== null) || a.dayOffset - b.dayOffset);
+    const indexOf = new Map(ordered.map((r, i) => [r.id, i]));
+    const templateEntries = ordered.map((r) => ({
+      dayOffset: r.dayOffset,
+      slot: r.slot,
+      recipeId: r.recipeId,
+      foodId: r.foodId,
+      servings: r.servings,
+      grams: r.grams,
+      locked: r.locked,
+      leftoverOfIndex: r.leftoverOfId && byId.has(r.leftoverOfId) ? (indexOf.get(r.leftoverOfId) ?? null) : null,
+    }));
+
+    const dates = weekDates(date);
+    let replaced = 0;
+    if (replace) {
+      const removed = await db
+        .delete(mealPlanEntries)
+        .where(and(eq(mealPlanEntries.userId, userId), between(mealPlanEntries.date, dates[0], dates[6]), isNull(mealPlanEntries.logEntryId), eq(mealPlanEntries.locked, false)))
+        .returning({ id: mealPlanEntries.id });
+      replaced = removed.length;
+    }
+    const existing = await loadEntries(userId, dates[0], dates[6]);
+    const { entries, skipped } = templateToWeek(dates[0], templateEntries, new Set(existing.map((e) => `${e.date}|${e.slot}`)));
+
+    const created: string[] = [];
+    await db.transaction(async (tx) => {
+      const idByKey = new Map<string, string>();
+      for (const e of entries) {
+        const [row] = await tx
+          .insert(mealPlanEntries)
+          .values({
+            userId,
+            date: e.date,
+            slot: e.slot,
+            recipeId: e.recipeId,
+            foodId: e.foodId,
+            servings: e.servings,
+            grams: e.grams,
+            locked: e.locked,
+            leftoverOfId: e.leftoverOfIndex !== null ? (idByKey.get(String(e.leftoverOfIndex)) ?? null) : null,
+          })
+          .returning({ id: mealPlanEntries.id });
+        idByKey.set(String(e.index), row.id);
+        created.push(row.id);
+      }
+    });
+    return c.json({ ids: created, added: created.length, skipped: skipped.length, replaced });
+  })
 
   .get("/settings", async (c) => c.json({ ...(await loadSettings(c.get("session").user.id)), presets: Object.entries(DIET_PRESETS).map(([id, p]) => ({ id, label: p.label })) }))
 
