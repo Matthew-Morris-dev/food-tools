@@ -1,19 +1,16 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, desc, eq, lte, sum } from "drizzle-orm";
+import { and, desc, eq, lte } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
 import { db } from "../db";
-import { days, exerciseEntries, goals, profiles, weightEntries } from "../db/schema";
+import { days, goals, profiles, weightEntries } from "../db/schema";
+import { dayTargetsInRange } from "../goals/day";
 import { planFor, setupBody } from "../goals/setup";
-import { withExtraKcal } from "../goals/targets";
 import { requireSession, type AuthEnv } from "../middleware";
 
 const day = z.iso.date();
-
-// ISO weekday (1 = Monday ... 7 = Sunday) of a YYYY-MM-DD date
-export const isoWeekday = (date: string) => new Date(`${date}T00:00:00Z`).getUTCDay() || 7;
 
 export async function goalOn(userId: string, date: string) {
   const [goal] = await db
@@ -103,38 +100,9 @@ export const goalRoutes = new Hono<AuthEnv>()
 
   // The targets that apply on one date, after training-day and exercise adjustments
   .get("/day/:date", zValidator("param", z.object({ date: day })), async (c) => {
-    const userId = c.get("session").user.id;
     const { date } = c.req.valid("param");
-    const goal = await goalOn(userId, date);
-    if (!goal) return c.json(null);
-
-    const [override] = await db
-      .select({ trainingDay: days.trainingDay })
-      .from(days)
-      .where(and(eq(days.userId, userId), eq(days.date, date)));
-    const scheduled = goal.trainingWeekdays.includes(isoWeekday(date));
-    const trainingDay = override?.trainingDay ?? scheduled;
-
-    const [{ total }] = await db
-      .select({ total: sum(exerciseEntries.kcal).mapWith(Number) })
-      .from(exerciseEntries)
-      .where(and(eq(exerciseEntries.userId, userId), eq(exerciseEntries.date, date)));
-    const exerciseKcal = total ?? 0;
-
-    const base = { kcal: goal.kcal, protein: goal.protein, carbs: goal.carbs, fat: goal.fat };
-    const trainingExtra = trainingDay ? goal.trainingDayExtraKcal : 0;
-    const exerciseExtra = goal.exerciseAddsToAllowance ? exerciseKcal : 0;
-    return c.json({
-      goalId: goal.id,
-      type: goal.type,
-      base,
-      targets: withExtraKcal(base, trainingExtra + exerciseExtra),
-      hasSchedule: goal.trainingWeekdays.length > 0,
-      trainingDay,
-      trainingExtraKcal: trainingExtra,
-      exerciseKcal,
-      exerciseAddsToAllowance: goal.exerciseAddsToAllowance,
-    });
+    const targets = await dayTargetsInRange(c.get("session").user.id, date, date);
+    return c.json(targets.get(date) ?? null);
   })
 
   .put(

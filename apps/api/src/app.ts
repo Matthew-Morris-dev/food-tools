@@ -7,6 +7,7 @@ import { requireSession } from "./middleware";
 import { foodRoutes } from "./routes/foods";
 import { goalRoutes, profileRoutes } from "./routes/goals";
 import { logRoutes } from "./routes/log";
+import { progressRoutes, weightRoutes } from "./routes/progress";
 import { savedMealRoutes } from "./routes/saved-meals";
 
 export const app = new Hono()
@@ -27,6 +28,8 @@ export const app = new Hono()
   .route("/api/log", logRoutes)
   .route("/api/profile", profileRoutes)
   .route("/api/goals", goalRoutes)
+  .route("/api/weights", weightRoutes)
+  .route("/api/progress", progressRoutes)
   .route("/api/saved-meals", savedMealRoutes);
 
 export type AppType = typeof app;
