@@ -86,4 +86,5 @@ export const api = {
     apiFetch<{ date: string; weightKg: number }>(`/api/weights/${date}`, json('PUT', { weightKg })),
   deleteWeight: (date: string) => apiFetch<void>(`/api/weights/${date}`, { method: 'DELETE' }),
   progress: (date: string, range: ProgressRange) => apiFetch<Progress>(`/api/progress?date=${date}&range=${range}`),
+  submitCheckIn: (body: { date: string; accept: boolean }) => apiFetch<void>('/api/check-in', json('POST', body)),
 };

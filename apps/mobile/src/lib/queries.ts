@@ -132,3 +132,8 @@ function useWeightMutation<TArgs>(fn: (args: TArgs) => Promise<unknown>) {
 
 export const useSaveWeight = () => useWeightMutation(api.saveWeight);
 export const useDeleteWeight = () => useWeightMutation(api.deleteWeight);
+
+export const useSubmitCheckIn = () => {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: api.submitCheckIn, onSuccess: () => invalidateGoalData(client) });
+};

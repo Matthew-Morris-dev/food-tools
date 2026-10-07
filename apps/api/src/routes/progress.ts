@@ -5,9 +5,11 @@ import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
 import { db } from "../db";
-import { foodLogEntries, goals, weightEntries } from "../db/schema";
+import { checkIns, foodLogEntries, goals, weightEntries } from "../db/schema";
 import { addDays, daysBetween } from "../dates";
+import { checkInState } from "../goals/check-in-service";
 import { dayTargetsInRange } from "../goals/day";
+import { macrosFor, roundTo } from "../goals/targets";
 import { withTrend } from "../goals/trend";
 import { requireSession, type AuthEnv } from "../middleware";
 
@@ -108,6 +110,7 @@ export const progressRoutes = new Hono<AuthEnv>()
 
       return c.json({
         goal: currentGoal ?? null,
+        checkIn: (await checkInState(userId, today)).state,
         weights,
         latest,
         changeSinceStartKg: currentGoal && latest ? Math.round((latest.trendKg - currentGoal.startWeightKg) * 10) / 10 : null,
@@ -126,3 +129,52 @@ export const progressRoutes = new Hono<AuthEnv>()
       });
     },
   );
+
+export const checkInRoutes = new Hono<AuthEnv>()
+  .use(requireSession)
+
+  // Accepting applies the suggestion as a new goal version; keeping the current targets
+  // just records the check-in. The suggestion is recomputed here, never taken from the client.
+  .post("/", zValidator("json", z.object({ date: day, accept: z.boolean() })), async (c) => {
+    const userId = c.get("session").user.id;
+    const { date, accept } = c.req.valid("json");
+    const { state, goal, profile, trendKg } = await checkInState(userId, date);
+    if (!goal || !profile || (state.status !== "on_track" && state.status !== "adjust")) {
+      throw new HTTPException(409, { message: "No check-in is due" });
+    }
+
+    const adjust = state.status === "adjust";
+    await db.transaction(async (tx) => {
+      await tx.insert(checkIns).values({
+        userId,
+        date,
+        observedRateKg: state.observedRateKg,
+        suggestedKcal: adjust ? state.suggestedKcal : null,
+        accepted: adjust && accept,
+      });
+      if (!(adjust && accept)) return;
+
+      // Manual goals keep their protein and fat; the calorie change goes to carbs
+      const macros = goal.manual
+        ? { protein: goal.protein, fat: goal.fat, carbs: Math.max(0, goal.carbs + roundTo(state.deltaKcal / 4, 5)) }
+        : macrosFor(state.suggestedKcal, goal.type, trendKg ?? goal.startWeightKg, profile.heightCm);
+      await tx.insert(goals).values({
+        userId,
+        type: goal.type,
+        ratePerWeekKg: goal.ratePerWeekKg,
+        startWeightKg: goal.startWeightKg,
+        targetWeightKg: goal.targetWeightKg,
+        kcal: state.suggestedKcal,
+        protein: macros.protein,
+        carbs: macros.carbs,
+        fat: macros.fat,
+        manual: goal.manual,
+        trainingWeekdays: goal.trainingWeekdays,
+        trainingDayExtraKcal: goal.trainingDayExtraKcal,
+        exerciseAddsToAllowance: goal.exerciseAddsToAllowance,
+        activeFrom: date,
+        reason: "check_in",
+      });
+    });
+    return c.body(null, 204);
+  });

@@ -123,8 +123,24 @@ export type DayTargets = {
 
 export type WeightPoint = { date: string; weightKg: number; trendKg: number };
 
+export type CheckIn =
+  | { status: 'no_goal' }
+  | { status: 'not_due'; dueOn: string }
+  | { status: 'insufficient'; dueOn: string; message: string; neededWeighIns?: number }
+  | { status: 'on_track'; dueOn: string; observedRateKg: number; plannedRateKg: number; trendKg: number; atFloor?: boolean }
+  | {
+      status: 'adjust';
+      dueOn: string;
+      observedRateKg: number;
+      plannedRateKg: number;
+      trendKg: number;
+      deltaKcal: number;
+      suggestedKcal: number;
+    };
+
 export type Progress = {
   goal: Goal | null;
+  checkIn: CheckIn;
   weights: WeightPoint[];
   latest: WeightPoint | null;
   changeSinceStartKg: number | null;

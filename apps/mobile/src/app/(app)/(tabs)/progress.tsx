@@ -10,7 +10,7 @@ import { Spacing } from '@/constants/theme';
 import { today } from '@/lib/dates';
 import { fmt } from '@/lib/nutrition';
 import { useProgress, useUnits } from '@/lib/queries';
-import type { ProgressRange } from '@/lib/types';
+import type { CheckIn, ProgressRange } from '@/lib/types';
 import { formatWeight, formatWeightChange } from '@/lib/units';
 
 const RANGES: { value: ProgressRange; label: string }[] = [
@@ -34,6 +34,8 @@ export default function ProgressScreen() {
       ) : (
         data && (
           <>
+            <CheckInCard checkIn={data.checkIn} />
+
             <Card>
               <ThemedText type="smallBold">Weight</ThemedText>
               {data.latest ? (
@@ -124,6 +126,31 @@ export default function ProgressScreen() {
       )}
     </Screen>
   );
+}
+
+function CheckInCard({ checkIn }: { checkIn: CheckIn }) {
+  if (checkIn.status === 'on_track' || checkIn.status === 'adjust') {
+    return (
+      <Card>
+        <ThemedText type="smallBold">Weekly check-in</ThemedText>
+        <ThemedText>
+          {checkIn.status === 'adjust'
+            ? 'Your weight trend suggests a small change to your targets.'
+            : 'Your weight trend is in line with your plan.'}
+        </ThemedText>
+        <Button title="Review" onPress={() => router.push('/check-in')} />
+      </Card>
+    );
+  }
+  if (checkIn.status === 'insufficient') {
+    return (
+      <Card>
+        <ThemedText type="smallBold">Weekly check-in</ThemedText>
+        <ThemedText themeColor="textSecondary">{checkIn.message}</ThemedText>
+      </Card>
+    );
+  }
+  return null;
 }
 
 const styles = StyleSheet.create({
