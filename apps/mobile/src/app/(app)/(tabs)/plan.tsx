@@ -37,6 +37,10 @@ export default function PlanScreen() {
         </Pressable>
       </View>
 
+      <View style={styles.actions}>
+        <Button title="Auto-fill week" style={styles.action} onPress={() => router.push({ pathname: '/plan/autofill', params: { anchor } })} />
+      </View>
+
       <ErrorText error={error} />
       {isPending ? <Loading /> : data?.days.map((day) => <DayCard key={day.date} day={day} weekAnchor={anchor} />)}
     </Screen>
@@ -139,6 +143,8 @@ function EntryRow({ entry, onPress }: { entry: PlanEntry; onPress: () => void })
 const styles = StyleSheet.create({
   weekRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.two },
   center: { textAlign: 'center' },
+  actions: { flexDirection: 'row', gap: Spacing.two },
+  action: { flex: 1 },
   dayHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   slot: { gap: Spacing.half },
   slotHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

@@ -211,3 +211,5 @@ export const useLogPlanDay = () => usePlanMutation(api.logPlanDay, true);
 
 export const usePlannerSettings = () => useQuery({ queryKey: ['plan', 'settings'], queryFn: api.plannerSettings });
 export const useSavePlannerSettings = () => usePlanMutation(api.savePlannerSettings);
+
+export const useAutofillPlan = () => usePlanMutation(api.autofillPlan);

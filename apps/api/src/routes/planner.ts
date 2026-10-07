@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, between, eq, inArray, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "../db";
 import { foodLogEntries, foods, mealPlanEntries, plannerSettings } from "../db/schema";
 import { weekDates } from "../dates";
+import { autoFill, type Candidate } from "../planner/autofill";
 import { dayTargetsInRange } from "../goals/day";
 import { DIET_PRESETS } from "../planner/diet";
 import { fitDay } from "../planner/fit";
@@ -225,6 +226,100 @@ export const plannerRoutes = new Hono<AuthEnv>()
     for (const entry of pending) logged.push(await logPlanned(userId, entry.id, {}));
     return c.json(logged, 201);
   })
+
+  // Fills the week's empty slots from the user's recipes and saves the result. The
+  // new ids are returned so the app can offer Undo through the bulk delete.
+  .post(
+    "/autofill",
+    zValidator(
+      "json",
+      z.object({
+        date: day,
+        slots: z.array(slot).min(1).max(4),
+        leftovers: z.boolean().default(false),
+        // Clears this week's unlocked, uneaten meals in those slots first
+        replace: z.boolean().default(false),
+      }),
+    ),
+    async (c) => {
+      const userId = c.get("session").user.id;
+      const body = c.req.valid("json");
+      const dates = weekDates(body.date);
+
+      const targets = await dayTargetsInRange(userId, dates[0], dates[6]);
+      if (targets.size === 0) throw new HTTPException(409, { message: "Set a goal first so there are targets to fill towards" });
+
+      let replaced = 0;
+      if (body.replace) {
+        const removed = await db
+          .delete(mealPlanEntries)
+          .where(
+            and(
+              eq(mealPlanEntries.userId, userId),
+              between(mealPlanEntries.date, dates[0], dates[6]),
+              inArray(mealPlanEntries.slot, body.slots),
+              isNull(mealPlanEntries.logEntryId),
+              eq(mealPlanEntries.locked, false),
+            ),
+          )
+          .returning({ id: mealPlanEntries.id });
+        replaced = removed.length;
+      }
+
+      const [existing, recipes, settings] = await Promise.all([loadEntries(userId, dates[0], dates[6]), loadRecipes(userId), loadSettings(userId)]);
+      const candidates: Candidate[] = [...recipes.values()].map((r) => ({
+        id: r.id,
+        name: r.name,
+        slots: r.slots as Candidate["slots"],
+        preference: r.preference,
+        perServing: r.perServing,
+        servings: r.servings,
+        ingredientNames: r.ingredients.map((i) => i.name),
+        incomplete: r.incomplete,
+      }));
+
+      const result = autoFill({
+        weekStart: dates[0],
+        dates,
+        targets: new Map([...targets].map(([d, t]) => [d, t.targets.kcal])),
+        slots: body.slots,
+        candidates,
+        existing: existing.map((e) => ({ date: e.date, slot: e.slot, kcal: e.macros.kcal, recipeId: e.recipeId, leftover: e.leftoverOfId !== null })),
+        diets: settings.diets,
+        excludedWords: settings.excludedWords,
+        leftovers: body.leftovers,
+      });
+
+      // Cooks are saved before the leftovers that point at them
+      const realIds = new Map<string, string>();
+      const ordered = [...result.entries].sort((a, b) => Number(a.leftoverOfTempId !== null) - Number(b.leftoverOfTempId !== null));
+      await db.transaction(async (tx) => {
+        for (const e of ordered) {
+          const [row] = await tx
+            .insert(mealPlanEntries)
+            .values({
+              userId,
+              date: e.date,
+              slot: e.slot,
+              recipeId: e.recipeId,
+              servings: e.servings,
+              leftoverOfId: e.leftoverOfTempId ? (realIds.get(e.leftoverOfTempId) ?? null) : null,
+            })
+            .returning({ id: mealPlanEntries.id });
+          realIds.set(e.tempId, row.id);
+        }
+      });
+
+      return c.json({
+        ids: [...realIds.values()],
+        added: result.entries.length,
+        leftovers: result.entries.filter((e) => e.leftoverOfTempId).length,
+        replaced,
+        skipped: result.skipped,
+        excluded: result.excluded,
+      });
+    },
+  )
 
   .get("/settings", async (c) => c.json({ ...(await loadSettings(c.get("session").user.id)), presets: Object.entries(DIET_PRESETS).map(([id, p]) => ({ id, label: p.label })) }))
 

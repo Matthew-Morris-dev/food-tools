@@ -137,4 +137,13 @@ export const api = {
   logPlanDay: (date: string) => apiFetch<LogEntry[]>(`/api/plan/days/${date}/log`, { method: 'POST' }),
   plannerSettings: () => apiFetch<PlannerSettings & { presets: { id: string; label: string }[] }>('/api/plan/settings'),
   savePlannerSettings: (settings: PlannerSettings) => apiFetch<PlannerSettings>('/api/plan/settings', json('PUT', settings)),
+  autofillPlan: (body: { date: string; slots: Slot[]; leftovers: boolean; replace: boolean }) =>
+    apiFetch<{
+      ids: string[];
+      added: number;
+      leftovers: number;
+      replaced: number;
+      skipped: { date: string; slot: Slot; reason: string }[];
+      excluded: { incomplete: number; disliked: number; diet: number };
+    }>('/api/plan/autofill', json('POST', body)),
 };
