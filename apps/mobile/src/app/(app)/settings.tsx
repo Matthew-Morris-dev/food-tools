@@ -8,7 +8,7 @@ import { Spacing } from '@/constants/theme';
 import { authClient } from '@/lib/auth-client';
 import { useProfile, useSetUnits } from '@/lib/queries';
 
-function LinkRow({ href, label }: { href: '/goal/setup' | '/support'; label: string }) {
+function LinkRow({ href, label }: { href: '/goal/setup' | '/support' | '/plan/diet'; label: string }) {
   return (
     <Link href={href} asChild>
       <Pressable style={({ pressed }) => pressed && styles.pressed}>
@@ -63,6 +63,7 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        <LinkRow href="/plan/diet" label="Diet and exclusions" />
         <LinkRow href="/support" label="Support" />
 
         <View style={styles.section}>

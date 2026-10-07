@@ -42,6 +42,14 @@ export default function PlanScreen() {
         <Button title="Templates" variant="secondary" style={styles.action} onPress={() => router.push({ pathname: '/plan/templates', params: { anchor } })} />
       </View>
 
+      <Pressable onPress={() => router.push('/plan/diet')} hitSlop={8}>
+        <ThemedText type="small" themeColor="textSecondary">
+          {data && (data.settings.diets.length > 0 || data.settings.excludedWords.length > 0)
+            ? `Diet settings on: ${[...data.settings.diets, ...data.settings.excludedWords.map((w) => `no ${w}`)].join(', ')}`
+            : 'Diet and exclusions: none set'}
+        </ThemedText>
+      </Pressable>
+
       <ErrorText error={error} />
       {isPending ? <Loading /> : data?.days.map((day) => <DayCard key={day.date} day={day} weekAnchor={anchor} />)}
     </Screen>

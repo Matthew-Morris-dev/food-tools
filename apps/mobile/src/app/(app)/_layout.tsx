@@ -17,6 +17,7 @@ export default function AppLayout() {
       <Stack.Screen name="exercise/add" options={{ title: 'Add exercise' }} />
       <Stack.Screen name="plan/autofill" options={{ title: 'Auto-fill week' }} />
       <Stack.Screen name="plan/templates" options={{ title: 'Week templates' }} />
+      <Stack.Screen name="plan/diet" options={{ title: 'Diet and exclusions' }} />
       <Stack.Screen name="plan/add" options={{ title: 'Add to plan' }} />
       <Stack.Screen name="plan/entry/[id]" options={{ title: 'Planned meal' }} />
       <Stack.Screen name="check-in" options={{ title: 'Weekly check-in' }} />
