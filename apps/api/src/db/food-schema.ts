@@ -43,6 +43,52 @@ export const foods = pgTable(
   ],
 );
 
+// A recipe's nutrition is never stored: it's calculated from its ingredients, so fixing
+// a food fixes every recipe that uses it
+export const recipes = pgTable(
+  "recipe",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    servings: real().notNull(),
+    method: text().notNull().default(""),
+    tags: text().array().notNull().default([]),
+    // Weight of the finished dish, so a portion can be logged in grams
+    cookedWeightG: real(),
+    sourceUrl: text(),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp()
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => [index("recipe_user_id_idx").on(t.userId)],
+);
+
+export const recipeIngredients = pgTable(
+  "recipe_ingredient",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    recipeId: uuid()
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    position: integer().notNull(),
+    // Null while an ingredient is still unmatched; it then counts as 0 nutrition
+    foodId: uuid().references(() => foods.id, { onDelete: "set null" }),
+    // The ingredient as written, e.g. "sunflower oil"
+    name: text().notNull(),
+    quantity: real(),
+    unit: text(),
+    // The authoritative amount; quantity and unit are kept for display
+    grams: real().notNull(),
+    note: text(),
+  },
+  (t) => [index("recipe_ingredient_recipe_id_idx").on(t.recipeId)],
+);
+
 // Entries keep a snapshot of the nutrition at the time of logging, so editing a
 // food later doesn't rewrite history
 export const foodLogEntries = pgTable(
@@ -56,6 +102,7 @@ export const foodLogEntries = pgTable(
     slot: mealSlot().notNull(),
     status: logStatus().notNull().default("eaten"),
     foodId: uuid().references(() => foods.id, { onDelete: "set null" }),
+    recipeId: uuid().references(() => recipes.id, { onDelete: "set null" }),
     name: text().notNull(),
     brand: text(),
     // Null for quick-add entries
