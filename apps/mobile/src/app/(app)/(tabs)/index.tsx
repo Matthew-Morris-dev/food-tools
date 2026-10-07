@@ -10,8 +10,8 @@ import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { authClient } from '@/lib/auth-client';
 import { addDays, dayLabel, today } from '@/lib/dates';
-import { fmt, SLOTS, slotForNow, sum } from '@/lib/nutrition';
-import { useDayLog, useDayTargets, useSetTrainingDay } from '@/lib/queries';
+import { activityLabel, fmt, SLOTS, slotForNow, sum } from '@/lib/nutrition';
+import { useDayLog, useDayTargets, useDeleteExercise, useExercise, useSetTrainingDay } from '@/lib/queries';
 import type { LogEntry, Slot } from '@/lib/types';
 
 export default function TodayScreen() {
@@ -22,6 +22,8 @@ export default function TodayScreen() {
   const { data: entries, isPending, error } = useDayLog(date);
   const { data: day } = useDayTargets(date);
   const setTrainingDay = useSetTrainingDay();
+  const { data: exercise } = useExercise(date);
+  const deleteExercise = useDeleteExercise();
 
   const add = (slot: Slot) => router.push({ pathname: '/log/add', params: { date, slot } });
   const totals = sum(entries ?? []);
@@ -115,6 +117,44 @@ export default function TodayScreen() {
           />
         ))
       )}
+      {!isPending && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <ThemedText type="smallBold">
+              Exercise
+              {(exercise?.length ?? 0) > 0 && (
+                <ThemedText type="small" themeColor="textSecondary">{`  ${fmt(day?.exerciseKcal ?? exercise!.reduce((s, e) => s + e.kcal, 0))} kcal`}</ThemedText>
+              )}
+            </ThemedText>
+            <Pressable onPress={() => router.push({ pathname: '/exercise/add', params: { date } })} hitSlop={8}>
+              <ThemedText type="small" themeColor="textSecondary">
+                + Add
+              </ThemedText>
+            </Pressable>
+          </View>
+          {exercise?.map((e) => (
+            <View key={e.id} style={styles.entry}>
+              <View style={styles.entryText}>
+                <ThemedText numberOfLines={1}>{activityLabel(e.activity)}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {e.minutes} min · {fmt(e.kcal)} kcal
+                </ThemedText>
+              </View>
+              <Pressable onPress={() => deleteExercise.mutate(e.id)} hitSlop={8}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Remove
+                </ThemedText>
+              </Pressable>
+            </View>
+          ))}
+          {day?.exerciseAddsToAllowance && day.exerciseKcal > 0 && (
+            <ThemedText type="small" themeColor="textSecondary">
+              Added to today&apos;s allowance.
+            </ThemedText>
+          )}
+        </View>
+      )}
+
       {entries?.length === 0 && <Placeholder>Nothing logged yet. Tap + to add food.</Placeholder>}
     </Screen>
   );

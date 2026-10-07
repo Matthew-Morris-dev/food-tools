@@ -149,3 +149,22 @@ export type Progress = {
 };
 
 export type ProgressRange = '4w' | '12w' | 'all';
+
+export type ExerciseActivity =
+  | 'walking'
+  | 'running'
+  | 'cycling'
+  | 'swimming'
+  | 'strength'
+  | 'hiit'
+  | 'yoga'
+  | 'sport'
+  | 'other';
+
+export type ExerciseEntry = {
+  id: string;
+  date: string;
+  activity: ExerciseActivity;
+  minutes: number;
+  kcal: number;
+};

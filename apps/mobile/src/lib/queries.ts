@@ -1,7 +1,7 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api } from './api';
-import type { LogEntry, ProgressRange, SetupInput } from './types';
+import type { ExerciseActivity, LogEntry, ProgressRange, SetupInput } from './types';
 
 export const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -137,3 +137,28 @@ export const useSubmitCheckIn = () => {
   const client = useQueryClient();
   return useMutation({ mutationFn: api.submitCheckIn, onSuccess: () => invalidateGoalData(client) });
 };
+
+export const useExercise = (date: string) => useQuery({ queryKey: ['exercise', date], queryFn: () => api.exercise(date) });
+
+export const useExerciseEstimate = (date: string, activity: ExerciseActivity, minutes: number | null) =>
+  useQuery({
+    queryKey: ['exercise', 'estimate', date, activity, minutes],
+    queryFn: () => api.estimateExercise({ date, activity, minutes: minutes! }),
+    enabled: minutes !== null && minutes > 0 && minutes <= 600 && Number.isInteger(minutes),
+    staleTime: 5 * 60_000,
+  });
+
+function useExerciseMutation<TArgs>(fn: (args: TArgs) => Promise<unknown>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['exercise'] });
+      // Exercise can change the day's allowance
+      void client.invalidateQueries({ queryKey: ['day-targets'] });
+    },
+  });
+}
+
+export const useAddExercise = () => useExerciseMutation(api.addExercise);
+export const useDeleteExercise = () => useExerciseMutation(api.deleteExercise);

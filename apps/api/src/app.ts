@@ -5,6 +5,7 @@ import { auth } from "./auth";
 import { env } from "./env";
 import { requireSession } from "./middleware";
 import { foodRoutes } from "./routes/foods";
+import { exerciseRoutes } from "./routes/exercise";
 import { goalRoutes, profileRoutes } from "./routes/goals";
 import { logRoutes } from "./routes/log";
 import { checkInRoutes, progressRoutes, weightRoutes } from "./routes/progress";
@@ -31,6 +32,7 @@ export const app = new Hono()
   .route("/api/weights", weightRoutes)
   .route("/api/progress", progressRoutes)
   .route("/api/check-in", checkInRoutes)
+  .route("/api/exercise", exerciseRoutes)
   .route("/api/saved-meals", savedMealRoutes);
 
 export type AppType = typeof app;

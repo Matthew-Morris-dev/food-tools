@@ -43,3 +43,17 @@ export function parseNumber(text: string): number | null {
   const n = Number(text.replace(',', '.').trim());
   return text.trim() === '' || !Number.isFinite(n) ? null : n;
 }
+
+export const ACTIVITIES: { value: import('./types').ExerciseActivity; label: string }[] = [
+  { value: 'walking', label: 'Walking' },
+  { value: 'running', label: 'Running' },
+  { value: 'cycling', label: 'Cycling' },
+  { value: 'swimming', label: 'Swimming' },
+  { value: 'strength', label: 'Strength' },
+  { value: 'hiit', label: 'HIIT' },
+  { value: 'yoga', label: 'Yoga' },
+  { value: 'sport', label: 'Sport' },
+  { value: 'other', label: 'Other' },
+];
+
+export const activityLabel = (activity: string) => ACTIVITIES.find((a) => a.value === activity)?.label ?? activity;

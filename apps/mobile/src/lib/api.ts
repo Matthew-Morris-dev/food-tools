@@ -7,6 +7,8 @@ import type {
   DayTargets,
   Food,
   Goal,
+  ExerciseActivity,
+  ExerciseEntry,
   GoalPlan,
   LogEntry,
   NewCustomFood,
@@ -87,4 +89,11 @@ export const api = {
   deleteWeight: (date: string) => apiFetch<void>(`/api/weights/${date}`, { method: 'DELETE' }),
   progress: (date: string, range: ProgressRange) => apiFetch<Progress>(`/api/progress?date=${date}&range=${range}`),
   submitCheckIn: (body: { date: string; accept: boolean }) => apiFetch<void>('/api/check-in', json('POST', body)),
+
+  exercise: (date: string) => apiFetch<ExerciseEntry[]>(`/api/exercise?date=${date}`),
+  estimateExercise: (p: { date: string; activity: ExerciseActivity; minutes: number }) =>
+    apiFetch<{ kcal: number | null }>(`/api/exercise/estimate?date=${p.date}&activity=${p.activity}&minutes=${p.minutes}`),
+  addExercise: (entry: { date: string; activity: ExerciseActivity; minutes: number; kcal?: number }) =>
+    apiFetch<ExerciseEntry>('/api/exercise', json('POST', entry)),
+  deleteExercise: (id: string) => apiFetch<void>(`/api/exercise/${id}`, { method: 'DELETE' }),
 };
