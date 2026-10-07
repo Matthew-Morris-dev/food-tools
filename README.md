@@ -44,3 +44,7 @@ Checks: `npm run typecheck` and `npm run lint`.
 
 - Generic foods: McCance and Widdowson's Composition of Foods Integrated Dataset 2021 ([CoFID](https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid)). Contains public sector information licensed under the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
 - Packaged foods: [Open Food Facts](https://world.openfoodfacts.org), available under the [Open Database Licence](https://opendatacommons.org/licenses/odbl/1-0/). Products are fetched on demand (barcode scans and explicit searches) and cached in your own database.
+
+## License
+
+The code is under the [MIT License](LICENSE): use, copy, change and share it however you like. The food data keeps its own licences, listed above.
