@@ -31,6 +31,7 @@ services:
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
       TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-}
       DISABLE_SIGNUP: ${DISABLE_SIGNUP:-false}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     volumes:
       - api-data:/data
     ports:

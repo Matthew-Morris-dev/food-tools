@@ -7,7 +7,8 @@ import { z } from "zod";
 import { db } from "../db";
 import { foodLogEntries, foods, recipeIngredients, recipes } from "../db/schema";
 import { requireSession, type AuthEnv } from "../middleware";
-import { extractRecipe } from "../recipes/extract";
+import { ClaudeImportError, claudeAvailable, parseWithClaude } from "../recipes/claude";
+import { extractRecipe, htmlToText } from "../recipes/extract";
 import { FetchBlockedError, fetchPage } from "../recipes/fetch-page";
 import { buildDraft } from "../recipes/import";
 import { portion, recipeNutrition } from "../recipes/nutrition";
@@ -170,16 +171,36 @@ export const recipeRoutes = new Hono<AuthEnv>()
     },
   )
 
+  // Whether the optional Claude fallback is set up on this server
+  .get("/import-options", (c) => c.json({ claude: claudeAvailable() }))
+
   // Reads a recipe from a web page or pasted text and returns a draft to review.
   // Nothing is saved until the user saves it like any other recipe.
   .post(
     "/import",
-    zValidator("json", z.union([z.object({ url: z.string().trim().max(2000) }), z.object({ text: z.string().trim().min(10).max(30000) })])),
+    zValidator(
+      "json",
+      z.union([
+        z.object({ url: z.string().trim().max(2000), useClaude: z.boolean().optional() }),
+        z.object({ text: z.string().trim().min(10).max(30000), useClaude: z.boolean().optional() }),
+      ]),
+    ),
     async (c) => {
       const userId = c.get("session").user.id;
       const body = c.req.valid("json");
+      const claude = async (text: string) => {
+        try {
+          return await parseWithClaude(text);
+        } catch (err) {
+          throw new HTTPException(422, { message: err instanceof ClaudeImportError ? err.message : "Claude couldn't read that one." });
+        }
+      };
 
       if ("text" in body) {
+        if (body.useClaude && claudeAvailable()) {
+          const draft = await buildDraft(userId, await claude(body.text), null);
+          return c.json({ ...draft, warnings: [...draft.warnings, "Claude read this text. Check each ingredient and weight."] });
+        }
         const parsed = parseRecipeText(body.text);
         if (parsed.ingredients.length === 0) {
           throw new HTTPException(422, { message: "Couldn't find any ingredients in that text. Put each ingredient on its own line, with its amount first." });
@@ -195,10 +216,17 @@ export const recipeRoutes = new Hono<AuthEnv>()
         throw new HTTPException(err instanceof FetchBlockedError ? 400 : 502, { message });
       }
       const extracted = extractRecipe(html);
-      if (!extracted) {
+      if (extracted) return c.json(await buildDraft(userId, { ...extracted }, body.url));
+
+      // No recipe data on the page: let Claude read the page text, if it's set up
+      if (!claudeAvailable()) {
         throw new HTTPException(422, { message: "Couldn't find a recipe on that page. Try pasting the recipe text instead." });
       }
-      return c.json(await buildDraft(userId, { ...extracted }, body.url));
+      const { text, truncated } = htmlToText(html);
+      const draft = await buildDraft(userId, await claude(text), body.url);
+      const notes = ["This page has no recipe data, so Claude read the page text. Check each ingredient and weight."];
+      if (truncated) notes.push("The page was long, so only the first part was read.");
+      return c.json({ ...draft, warnings: [...draft.warnings, ...notes] });
     },
   )
 

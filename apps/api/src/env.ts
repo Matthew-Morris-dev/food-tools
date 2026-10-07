@@ -26,5 +26,8 @@ export const env = {
   port: Number(process.env.PORT ?? 3000),
   // Extra comma-separated origins allowed to call the API (e.g. a web build of the app)
   trustedOrigins: (process.env.TRUSTED_ORIGINS ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+  // Optional: lets recipe import fall back to Claude for pages and text it can't read itself
+  anthropicKey: process.env.ANTHROPIC_API_KEY || null,
+  claudeModel: process.env.CLAUDE_MODEL || "claude-haiku-4-5",
   isDev: process.env.NODE_ENV !== "production",
 };

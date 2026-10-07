@@ -1,18 +1,23 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
 
 import { FormScreen } from '@/components/form-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Chip, ChipRow, ErrorText, TextField } from '@/components/ui';
 import { api } from '@/lib/api';
+import { Spacing } from '@/constants/theme';
 import { setDraft } from '@/lib/recipe-draft';
 
 export default function ImportRecipeScreen() {
   const [mode, setMode] = useState<'url' | 'text'>('url');
   const [url, setUrl] = useState('');
   const [text, setText] = useState('');
+  const [useClaude, setUseClaude] = useState(false);
+  // Only offered when the server has an Anthropic key set
+  const options = useQuery({ queryKey: ['recipes', 'import-options'], queryFn: api.importOptions, staleTime: 5 * 60_000 });
+  const claude = options.data?.claude ?? false;
 
   const importRecipe = useMutation({
     mutationFn: api.importRecipe,
@@ -25,7 +30,7 @@ export default function ImportRecipeScreen() {
   const valid = mode === 'url' ? /^https?:\/\/\S+$/i.test(url.trim()) : text.trim().length >= 10;
   const submit = () => {
     if (!valid) return;
-    importRecipe.mutate(mode === 'url' ? { url: url.trim() } : { text: text.trim() });
+    importRecipe.mutate(mode === 'url' ? { url: url.trim() } : { text: text.trim(), useClaude: claude && useClaude });
   };
 
   return (
@@ -67,6 +72,29 @@ export default function ImportRecipeScreen() {
         </>
       )}
 
+      {claude && (
+        <View style={styles.claude}>
+          {mode === 'text' && (
+            <View style={styles.claudeRow}>
+              <View style={styles.claudeText}>
+                <ThemedText>Tidy with Claude</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  For messy or unusual text the standard reader gets wrong.
+                </ThemedText>
+              </View>
+              <Switch value={useClaude} onValueChange={setUseClaude} />
+            </View>
+          )}
+          <ThemedText type="small" themeColor="textSecondary">
+            {mode === 'url'
+              ? "If a page has no recipe data, Claude reads the page text instead. That text is sent to Anthropic."
+              : useClaude
+                ? 'The recipe text will be sent to Anthropic.'
+                : ''}
+          </ThemedText>
+        </View>
+      )}
+
       <ThemedText type="small" themeColor="textSecondary">
         You&apos;ll review everything before it&apos;s saved: each ingredient is matched to a food and given a weight,
         and you can change either.
@@ -78,5 +106,8 @@ export default function ImportRecipeScreen() {
 }
 
 const styles = StyleSheet.create({
+  claude: { gap: Spacing.two },
+  claudeRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  claudeText: { flex: 1, gap: Spacing.half },
   text: { minHeight: 220, textAlignVertical: 'top' },
 });

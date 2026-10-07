@@ -110,3 +110,20 @@ export function extractRecipe(html: string): ExtractedRecipe | null {
   }
   return null;
 }
+
+const MAX_TEXT_CHARS = 24_000;
+
+// The readable text of a page, for handing to something that can read messy text
+export function htmlToText(html: string): { text: string; truncated: boolean } {
+  const body = html
+    .replace(/<(script|style|noscript|svg|nav|footer|header|form|iframe)[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<\/(p|div|li|h[1-6]|tr|section|article)>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n");
+  const text = decodeText(body)
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join("\n");
+  return { text: text.slice(0, MAX_TEXT_CHARS), truncated: text.length > MAX_TEXT_CHARS };
+}

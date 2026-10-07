@@ -2,7 +2,7 @@
 
 Self-hosted calorie tracking, meal planning and shopping lists. One mobile app (Expo) talking to your own server (a small TypeScript API and Postgres in Docker). See [docs/SPEC.md](docs/SPEC.md) for the product spec and roadmap.
 
-Status: early. The calorie counter works: search, barcode and GS1 QR scanning, quick add, custom foods, saved meals, and a daily log by meal. Goals work too: calorie and macro targets, weigh-ins with a trend chart, a weekly check-in, training days and exercise. The recipe library, meal planner and shopping list are next.
+Status: early. The calorie counter works: search, barcode and GS1 QR scanning, quick add, custom foods, saved meals, and a daily log by meal. Goals work too: calorie and macro targets, weigh-ins with a trend chart, a weekly check-in, training days and exercise. The recipe library works too: build recipes by hand or import them from a web page or pasted text, with nutrition calculated from the ingredients. The meal planner and shopping list are next.
 
 ## Run the server
 
@@ -44,6 +44,10 @@ Checks: `npm run typecheck`, `npm run lint` and `npm test`.
 
 - Generic foods: McCance and Widdowson's Composition of Foods Integrated Dataset 2021 ([CoFID](https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid)). Contains public sector information licensed under the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
 - Packaged foods: [Open Food Facts](https://world.openfoodfacts.org), available under the [Open Database Licence](https://opendatacommons.org/licenses/odbl/1-0/). Products are fetched on demand (barcode scans and explicit searches) and cached in your own database.
+
+## Optional: Claude for recipe import
+
+Recipe import reads most recipe sites and pasted text without any AI. If you add an `ANTHROPIC_API_KEY` to `.env` (create one at [platform.claude.com](https://platform.claude.com/)), pages with no recipe data and messy pasted text can fall back to Claude (Haiku 4.5). Only the recipe text is sent to Anthropic, and a recipe costs a fraction of a penny. Leave the key empty and the feature stays off.
 
 ## License
 

@@ -229,3 +229,16 @@ The biggest product risk is the basket feature promising more than the supermark
 - **Weight:** stored in kg; shown as kg, st + lb or lb. Targets and check-ins follow the 7-day average of weigh-ins, not single weigh-ins.
 - **Weekly check-in:** due a week after the goal or last check-in. Needs 3 weigh-ins in the last week and some from the week before. Within 0.2 kg a week of plan is on track; otherwise suggest half the gap in calories, at most 200 kcal, never below the floor, and always upward when losing faster than 1 kg a week. The user approves or keeps current targets.
 - **Not yet built:** option to hide numbers (tracked as a GitHub issue).
+
+## As built: recipe library (8 Oct 2026)
+
+- **A recipe** is a name, servings, method, tags, an optional cooked weight and source link, plus ingredients. Each ingredient has a food and a weight in grams; the amount as written ("2 tbsp") is kept for display. Nutrition is never typed in: it is calculated from the ingredients when read, so fixing a food corrects every recipe that uses it. Ingredients with no food chosen count as zero and mark the recipe "Incomplete".
+- **Logging:** one diary entry per log, with a snapshot of the nutrition. Log some servings, or, if the recipe has a cooked weight, grams of the finished dish.
+- **Import** reads the recipe data a web page publishes (or pasted text), then:
+  - parses each ingredient line into amount, unit, name and note;
+  - matches it to a food, mapping UK wording to CoFID names (chicken breast is "light meat", and so on) and preferring plain, raw and unflavoured versions;
+  - works out grams: exact for weights, estimated from densities and typical weights for volumes and counts, flagged for the user to check.
+  The result is a draft shown in the editor; nothing is saved until the user saves it. On the BBC Good Food chicken curry it lands on 354 kcal per serving, the same as the site.
+- **Known gaps:** CoFID has no cumin, oregano, paprika or chickpeas, so those lines are left for the user to match (the food picker can search Open Food Facts). Sites that block scrapers need the text pasted.
+- **Page fetching** is guarded: the server refuses private, local and link-local addresses, including hostnames that resolve to them and redirects to them, and caps time and size.
+- **Optional Claude fallback:** with `ANTHROPIC_API_KEY` set, pages with no recipe data, and pasted text when "Tidy with Claude" is switched on, are read by Claude Haiku 4.5. Only the recipe text is sent. The result is a draft like any other. An API key is used rather than a subscription login, because Anthropic doesn't allow third-party products to offer claude.ai login.

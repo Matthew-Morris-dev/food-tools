@@ -115,6 +115,7 @@ export const api = {
   deleteRecipe: (id: string) => apiFetch<void>(`/api/recipes/${id}`, { method: 'DELETE' }),
   logRecipe: ({ id, ...body }: { id: string; date: string; slot: Slot } & ({ servings: number } | { grams: number })) =>
     apiFetch<LogEntry>(`/api/recipes/${id}/log`, json('POST', body)),
-  importRecipe: (source: { url: string } | { text: string }) =>
+  importOptions: () => apiFetch<{ claude: boolean }>('/api/recipes/import-options'),
+  importRecipe: (source: ({ url: string } | { text: string }) & { useClaude?: boolean }) =>
     apiFetch<Draft>('/api/recipes/import', json('POST', source)),
 };
