@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "auth:generate": "auth generate --config src/auth.ts --output src/db/auth-schema.ts --yes",
-    "build:cofid": "tsx scripts/build-cofid.ts"
+    "build:cofid": "tsx scripts/build-cofid.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.7",
@@ -30,7 +31,8 @@
     "esbuild": "^0.28.2",
     "exceljs": "^4.4.0",
     "tsx": "^4.23.15",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3"
   },
   "license": "MIT"
 }

@@ -9,7 +9,8 @@
     "dev:api": "npm run dev -w apps/api",
     "dev:mobile": "npm run start -w apps/mobile",
     "typecheck": "npm run typecheck -w apps/api && npm run typecheck -w apps/mobile",
-    "lint": "npm run lint -w apps/mobile"
+    "lint": "npm run lint -w apps/mobile",
+    "test": "npm test -w apps/api"
   },
   "license": "MIT"
 }

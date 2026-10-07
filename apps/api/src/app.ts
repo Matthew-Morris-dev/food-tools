@@ -5,6 +5,7 @@ import { auth } from "./auth";
 import { env } from "./env";
 import { requireSession } from "./middleware";
 import { foodRoutes } from "./routes/foods";
+import { goalRoutes, profileRoutes } from "./routes/goals";
 import { logRoutes } from "./routes/log";
 import { savedMealRoutes } from "./routes/saved-meals";
 
@@ -24,6 +25,8 @@ export const app = new Hono()
   })
   .route("/api/foods", foodRoutes)
   .route("/api/log", logRoutes)
+  .route("/api/profile", profileRoutes)
+  .route("/api/goals", goalRoutes)
   .route("/api/saved-meals", savedMealRoutes);
 
 export type AppType = typeof app;

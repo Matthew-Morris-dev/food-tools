@@ -22,6 +22,13 @@
       "when": 1791376194052,
       "tag": "0002_saved_meals",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791377207388,
+      "tag": "0003_goals",
+      "breakpoints": true
     }
   ]
 }
