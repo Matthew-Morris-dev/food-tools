@@ -217,3 +217,15 @@ The biggest product risk is the basket feature promising more than the supermark
 - [CoFID FAQ](https://fnnbri.quadram.ac.uk/help/), Food and Nutrition National Bioscience Research Infrastructure
 - [Open Food Facts data and API](https://world.openfoodfacts.org/data)
 - [fatsecret Platform Editions](https://platform.fatsecret.com/api-editions)
+
+## As built: goals and targets (7 Oct 2026)
+
+- **Energy:** Mifflin-St Jeor × activity factor (1.2 to 1.9). "Prefer not to say" uses the midpoint of the sex constants.
+- **Pace:** lose 0.25 to 1 kg a week (capped at 1% of bodyweight), gain 0.25 or 0.5, build muscle 0.1 or 0.25; 7,700 kcal per kg.
+- **Floor:** never below 1,200 kcal (female) or 1,500 kcal (otherwise). A manual target below the floor needs an explicit acknowledgement.
+- **Macros:** protein 1.4 to 1.8 g per kg of the lower of current weight and BMI 25 weight; fat 30% of calories (minimum 0.6 g/kg); carbs the rest.
+- **Training days:** chosen weekdays get extra calories (default +200, as carbs); any day can be switched from Today. Logged exercise only adds to the allowance if that setting is on.
+- **Goals are versioned.** Each edit or accepted check-in adds a goal from its start date, so past days keep the targets that applied then.
+- **Weight:** stored in kg; shown as kg, st + lb or lb. Targets and check-ins follow the 7-day average of weigh-ins, not single weigh-ins.
+- **Weekly check-in:** due a week after the goal or last check-in. Needs 3 weigh-ins in the last week and some from the week before. Within 0.2 kg a week of plan is on track; otherwise suggest half the gap in calories, at most 200 kcal, never below the floor, and always upward when losing faster than 1 kg a week. The user approves or keeps current targets.
+- **Not yet built:** option to hide numbers (tracked as a GitHub issue).

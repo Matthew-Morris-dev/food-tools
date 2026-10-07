@@ -2,7 +2,7 @@
 
 Self-hosted calorie tracking, meal planning and shopping lists. One mobile app (Expo) talking to your own server (a small TypeScript API and Postgres in Docker). See [docs/SPEC.md](docs/SPEC.md) for the product spec and roadmap.
 
-Status: early. The calorie counter works: search, barcode and GS1 QR scanning, quick add, custom foods, saved meals, and a daily log by meal. Goals, the meal planner and the shopping list are next.
+Status: early. The calorie counter works: search, barcode and GS1 QR scanning, quick add, custom foods, saved meals, and a daily log by meal. Goals work too: calorie and macro targets, weigh-ins with a trend chart, a weekly check-in, training days and exercise. The recipe library, meal planner and shopping list are next.
 
 ## Run the server
 
@@ -38,7 +38,7 @@ The generic food list in `apps/api/data/cofid.json` is built from the CoFID spre
 
 After changing the schema in `apps/api/src/db`, run `npm run db:generate -w apps/api` to create a migration. Migrations apply automatically when the API starts.
 
-Checks: `npm run typecheck` and `npm run lint`.
+Checks: `npm run typecheck`, `npm run lint` and `npm test`.
 
 ## Food data
 
