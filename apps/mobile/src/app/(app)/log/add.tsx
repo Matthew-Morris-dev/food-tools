@@ -3,14 +3,15 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { FoodRow } from '@/components/food-row';
+import { MealRow } from '@/components/meal-row';
 import { FormScreen } from '@/components/form-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Button, ErrorText, Loading, TextField } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useDebounced } from '@/hooks/use-debounced';
 import { slotLabel } from '@/lib/nutrition';
-import { useFoodSearch, useOpenFoodFactsSearch, useRecentFoods } from '@/lib/queries';
-import type { Food, Slot } from '@/lib/types';
+import { useFoodSearch, useOpenFoodFactsSearch, useRecentFoods, useSavedMeals } from '@/lib/queries';
+import type { Food, SavedMeal, Slot } from '@/lib/types';
 
 export default function AddFoodScreen() {
   const { date, slot } = useLocalSearchParams<{ date: string; slot: Slot }>();
@@ -19,11 +20,15 @@ export default function AddFoodScreen() {
   const [offQuery, setOffQuery] = useState<string | null>(null);
 
   const recent = useRecentFoods();
+  const savedMeals = useSavedMeals();
+  const meals = (savedMeals.data ?? []).filter((m) => m.name.toLowerCase().includes(q.toLowerCase()));
   const local = useFoodSearch(q);
   const off = useOpenFoodFactsSearch(offQuery ?? '', offQuery !== null && offQuery === q);
 
   const open = (food: Food) =>
     router.push({ pathname: '/log/food/[id]', params: { id: food.id, date, slot } });
+  const openMeal = (meal: SavedMeal) =>
+    router.push({ pathname: '/meals/[id]', params: { id: meal.id, date, slot } });
 
   return (
     <FormScreen>
@@ -50,6 +55,15 @@ export default function AddFoodScreen() {
           onPress={() => router.push({ pathname: '/log/quick-add', params: { date, slot } })}
         />
       </View>
+
+      {meals.length > 0 && (
+        <View>
+          <ThemedText type="smallBold">My meals</ThemedText>
+          {meals.map((meal) => (
+            <MealRow key={meal.id} meal={meal} onPress={() => openMeal(meal)} />
+          ))}
+        </View>
+      )}
 
       {q === '' ? (
         <FoodList

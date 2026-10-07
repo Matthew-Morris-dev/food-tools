@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 import { authClient } from './auth-client';
 import { API_URL } from './config';
-import type { BarcodeResult, Food, LogEntry, NewCustomFood, Slot } from './types';
+import type { BarcodeResult, Food, LogEntry, NewCustomFood, SavedMeal, Slot } from './types';
 
 // Calls our API with the signed-in session. Native apps have no cookie jar, so the
 // session cookie Better Auth keeps in SecureStore is attached by hand.
@@ -47,4 +47,12 @@ export const api = {
   updateEntry: (id: string, changes: { slot?: Slot; grams?: number }) =>
     apiFetch<LogEntry>(`/api/log/${id}`, json('PATCH', changes)),
   deleteEntry: (id: string) => apiFetch<void>(`/api/log/${id}`, { method: 'DELETE' }),
+
+  savedMeals: () => apiFetch<SavedMeal[]>('/api/saved-meals'),
+  createSavedMeal: (meal: { name: string; entryIds: string[] }) =>
+    apiFetch<SavedMeal>('/api/saved-meals', json('POST', meal)),
+  renameSavedMeal: (id: string, name: string) => apiFetch<SavedMeal>(`/api/saved-meals/${id}`, json('PATCH', { name })),
+  deleteSavedMeal: (id: string) => apiFetch<void>(`/api/saved-meals/${id}`, { method: 'DELETE' }),
+  logSavedMeal: (id: string, target: { date: string; slot: Slot }) =>
+    apiFetch<LogEntry[]>(`/api/saved-meals/${id}/log`, json('POST', target)),
 };

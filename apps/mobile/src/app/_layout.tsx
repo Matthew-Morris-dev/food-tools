@@ -1,7 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { authClient } from '@/lib/auth-client';
@@ -13,16 +13,22 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { data: session, isPending } = authClient.useSession();
 
+  // Only wait for the first session check. Later re-checks (e.g. when the app regains
+  // focus while signed out) also report pending, and hiding the app then would wipe
+  // whatever was typed on the sign-in screen.
+  const [loaded, setLoaded] = useState(false);
+  if (!isPending && !loaded) setLoaded(true);
+
   useEffect(() => {
-    if (!isPending) SplashScreen.hide();
-  }, [isPending]);
+    if (loaded) SplashScreen.hide();
+  }, [loaded]);
 
   // Signing out shouldn't leave the previous user's data in memory
   useEffect(() => {
     if (!session) queryClient.clear();
   }, [session]);
 
-  if (isPending) return null;
+  if (!loaded) return null;
 
   return (
     <QueryClientProvider client={queryClient}>

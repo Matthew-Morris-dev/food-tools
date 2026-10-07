@@ -78,6 +78,7 @@ export default function TodayScreen() {
             label={label}
             entries={(entries ?? []).filter((e) => e.slot === value)}
             onAdd={() => add(value)}
+            onSave={() => router.push({ pathname: '/meals/new', params: { date, slot: value } })}
           />
         ))
       )}
@@ -97,7 +98,9 @@ function Macro({ label, grams }: { label: string; grams: number }) {
   );
 }
 
-function SlotSection({ label, entries, onAdd }: { label: string; entries: LogEntry[]; onAdd: () => void }) {
+type SlotSectionProps = { label: string; entries: LogEntry[]; onAdd: () => void; onSave: () => void };
+
+function SlotSection({ label, entries, onAdd, onSave }: SlotSectionProps) {
   const kcal = sum(entries).kcal;
   return (
     <View style={styles.section}>
@@ -106,11 +109,20 @@ function SlotSection({ label, entries, onAdd }: { label: string; entries: LogEnt
           {label}
           {entries.length > 0 && <ThemedText type="small" themeColor="textSecondary">{`  ${fmt(kcal)} kcal`}</ThemedText>}
         </ThemedText>
-        <Pressable onPress={onAdd} hitSlop={8}>
-          <ThemedText type="small" themeColor="textSecondary">
-            + Add
-          </ThemedText>
-        </Pressable>
+        <View style={styles.sectionActions}>
+          {entries.length > 0 && (
+            <Pressable onPress={onSave} hitSlop={8}>
+              <ThemedText type="small" themeColor="textSecondary">
+                Save meal
+              </ThemedText>
+            </Pressable>
+          )}
+          <Pressable onPress={onAdd} hitSlop={8}>
+            <ThemedText type="small" themeColor="textSecondary">
+              + Add
+            </ThemedText>
+          </Pressable>
+        </View>
       </View>
       {entries.map((entry) => (
         <Pressable
@@ -148,6 +160,7 @@ const styles = StyleSheet.create({
   macros: { flexDirection: 'row', gap: Spacing.five },
   section: { gap: Spacing.one },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionActions: { flexDirection: 'row', gap: Spacing.four },
   entry: {
     flexDirection: 'row',
     alignItems: 'center',

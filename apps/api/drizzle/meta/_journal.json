@@ -15,6 +15,13 @@
       "when": 1791314294801,
       "tag": "0001_foods",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791376194052,
+      "tag": "0002_saved_meals",
+      "breakpoints": true
     }
   ]
 }

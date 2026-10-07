@@ -6,6 +6,7 @@ import { env } from "./env";
 import { requireSession } from "./middleware";
 import { foodRoutes } from "./routes/foods";
 import { logRoutes } from "./routes/log";
+import { savedMealRoutes } from "./routes/saved-meals";
 
 export const app = new Hono()
   .use(
@@ -22,6 +23,7 @@ export const app = new Hono()
     return c.json({ id: user.id, name: user.name, email: user.email });
   })
   .route("/api/foods", foodRoutes)
-  .route("/api/log", logRoutes);
+  .route("/api/log", logRoutes)
+  .route("/api/saved-meals", savedMealRoutes);
 
 export type AppType = typeof app;

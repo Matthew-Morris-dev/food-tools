@@ -41,3 +41,17 @@ export type BarcodeResult =
   | { status: 'not_found' };
 
 export type NewCustomFood = Omit<Food, 'id' | 'source'>;
+
+export type SavedMealItem = {
+  id: string;
+  foodId: string | null;
+  name: string;
+  brand: string | null;
+  grams: number | null;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+export type SavedMeal = { id: string; name: string; items: SavedMealItem[] };

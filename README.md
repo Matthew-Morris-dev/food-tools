@@ -2,7 +2,7 @@
 
 Self-hosted calorie tracking, meal planning and shopping lists. One mobile app (Expo) talking to your own server (a small TypeScript API and Postgres in Docker). See [docs/SPEC.md](docs/SPEC.md) for the product spec and roadmap.
 
-Status: early. The calorie counter works: search, barcode scan, quick add, custom foods, and a daily log by meal. Goals, the meal planner and the shopping list are next.
+Status: early. The calorie counter works: search, barcode and GS1 QR scanning, quick add, custom foods, saved meals, and a daily log by meal. Goals, the meal planner and the shopping list are next.
 
 ## Run the server
 

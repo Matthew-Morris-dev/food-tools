@@ -25,17 +25,38 @@ export const useOpenFoodFactsSearch = (q: string, enabled: boolean) =>
     staleTime: Infinity,
   });
 
+export const useSavedMeals = () => useQuery({ queryKey: ['saved-meals'], queryFn: api.savedMeals });
+
 // Refreshes the day and the recent list after any change to the log
-function useLogMutation<TArgs>(fn: (args: TArgs) => Promise<LogEntry | void>) {
+function useLogMutation<TArgs>(fn: (args: TArgs) => Promise<LogEntry | LogEntry[] | void>) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: fn,
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ['log'] });
       void client.invalidateQueries({ queryKey: ['foods', 'recent'] });
+      // Logging a meal changes the order of the saved meals list
+      void client.invalidateQueries({ queryKey: ['saved-meals'] });
     },
   });
 }
+
+function useSavedMealMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => void client.invalidateQueries({ queryKey: ['saved-meals'] }),
+  });
+}
+
+export const useCreateSavedMeal = () => useSavedMealMutation(api.createSavedMeal);
+export const useRenameSavedMeal = () =>
+  useSavedMealMutation(({ id, name }: { id: string; name: string }) => api.renameSavedMeal(id, name));
+export const useDeleteSavedMeal = () => useSavedMealMutation(api.deleteSavedMeal);
+export const useLogSavedMeal = () =>
+  useLogMutation(({ id, ...target }: { id: string } & Parameters<typeof api.logSavedMeal>[1]) =>
+    api.logSavedMeal(id, target),
+  );
 
 export const useLogFood = () => useLogMutation(api.logFood);
 export const useQuickAdd = () => useLogMutation(api.quickAdd);
