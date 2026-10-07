@@ -6,6 +6,7 @@ export type Serving = { label: string; grams: number };
 
 export const foodSource = pgEnum("food_source", ["cofid", "off", "custom"]);
 export const mealSlot = pgEnum("meal_slot", ["breakfast", "lunch", "dinner", "snack"]);
+export const recipePreference = pgEnum("recipe_preference", ["like", "neutral", "dislike"]);
 export const logStatus = pgEnum("log_status", ["planned", "eaten"]);
 
 // Nutrition is always per 100 g so any portion can be calculated
@@ -58,6 +59,9 @@ export const recipes = pgTable(
     tags: text().array().notNull().default([]),
     // Weight of the finished dish, so a portion can be logged in grams
     cookedWeightG: real(),
+    // Meals this recipe suits, and how much you like it; used by the meal planner
+    slots: text().array().notNull().default(["lunch", "dinner"]),
+    preference: recipePreference().notNull().default("neutral"),
     sourceUrl: text(),
     createdAt: timestamp().defaultNow().notNull(),
     updatedAt: timestamp()

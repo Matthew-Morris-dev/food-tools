@@ -35,6 +35,8 @@ export const recipeBody = z.object({
     .max(10)
     .transform((tags) => [...new Set(tags)]),
   cookedWeightG: z.number().min(10).max(50000).nullable(),
+  slots: z.array(z.enum(["breakfast", "lunch", "dinner", "snack"])).max(4).transform((s) => [...new Set(s)]).default(["lunch", "dinner"]),
+  preference: z.enum(["like", "neutral", "dislike"]).default("neutral"),
   sourceUrl: z.url().max(2000).nullable(),
   ingredients: z.array(ingredientBody).max(80),
 });
@@ -61,7 +63,7 @@ const foodSummary = (f: typeof foods.$inferSelect) => ({
   servings: f.servings,
 });
 
-function present(recipe: typeof recipes.$inferSelect, rows: Row[]) {
+export function present(recipe: typeof recipes.$inferSelect, rows: Row[]) {
   const sorted = [...rows].sort((a, b) => a.ing.position - b.ing.position);
   const nutrition = recipeNutrition(
     sorted.map((r) => ({ grams: r.ing.grams, food: r.food })),
@@ -75,6 +77,8 @@ function present(recipe: typeof recipes.$inferSelect, rows: Row[]) {
     method: recipe.method,
     tags: recipe.tags,
     cookedWeightG: recipe.cookedWeightG,
+    slots: recipe.slots,
+    preference: recipe.preference,
     sourceUrl: recipe.sourceUrl,
     ...nutrition,
     ingredients: sorted.map(({ ing, food }) => ({
@@ -91,7 +95,7 @@ function present(recipe: typeof recipes.$inferSelect, rows: Row[]) {
   };
 }
 
-async function loadRows(recipeIds: string[]) {
+export async function loadRows(recipeIds: string[]) {
   if (recipeIds.length === 0) return new Map<string, Row[]>();
   const rows = await db
     .select({ ing: recipeIngredients, food: foods })

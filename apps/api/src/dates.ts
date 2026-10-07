@@ -20,3 +20,8 @@ export function eachDay(from: string, to: string) {
   for (let d = from; d <= to; d = addDays(d, 1)) out.push(d);
   return out;
 }
+
+// The Monday of the week containing a date (weeks start on Monday)
+export const weekStart = (date: string) => addDays(date, 1 - isoWeekday(date));
+
+export const weekDates = (date: string) => eachDay(weekStart(date), addDays(weekStart(date), 6));
