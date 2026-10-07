@@ -15,6 +15,9 @@ import type {
   Profile,
   Progress,
   ProgressRange,
+  Recipe,
+  RecipeInput,
+  RecipeListItem,
   SavedMeal,
   SetupInput,
   Slot,
@@ -96,4 +99,19 @@ export const api = {
   addExercise: (entry: { date: string; activity: ExerciseActivity; minutes: number; kcal?: number }) =>
     apiFetch<ExerciseEntry>('/api/exercise', json('POST', entry)),
   deleteExercise: (id: string) => apiFetch<void>(`/api/exercise/${id}`, { method: 'DELETE' }),
+
+  recipes: (params: { q?: string; tag?: string } = {}) => {
+    const query = new URLSearchParams();
+    if (params.q) query.set('q', params.q);
+    if (params.tag) query.set('tag', params.tag);
+    return apiFetch<RecipeListItem[]>(`/api/recipes?${query}`);
+  },
+  recipeTags: () => apiFetch<string[]>('/api/recipes/tags'),
+  recipe: (id: string) => apiFetch<Recipe>(`/api/recipes/${id}`),
+  createRecipe: (recipe: RecipeInput) => apiFetch<Recipe>('/api/recipes', json('POST', recipe)),
+  updateRecipe: ({ id, ...recipe }: RecipeInput & { id: string }) =>
+    apiFetch<Recipe>(`/api/recipes/${id}`, json('PUT', recipe)),
+  deleteRecipe: (id: string) => apiFetch<void>(`/api/recipes/${id}`, { method: 'DELETE' }),
+  logRecipe: ({ id, ...body }: { id: string; date: string; slot: Slot } & ({ servings: number } | { grams: number })) =>
+    apiFetch<LogEntry>(`/api/recipes/${id}/log`, json('POST', body)),
 };

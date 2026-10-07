@@ -162,3 +162,23 @@ function useExerciseMutation<TArgs>(fn: (args: TArgs) => Promise<unknown>) {
 
 export const useAddExercise = () => useExerciseMutation(api.addExercise);
 export const useDeleteExercise = () => useExerciseMutation(api.deleteExercise);
+
+export const useRecipes = (q = '', tag = '') =>
+  useQuery({ queryKey: ['recipes', 'list', q, tag], queryFn: () => api.recipes({ q, tag }) });
+
+export const useRecipeTags = () => useQuery({ queryKey: ['recipes', 'tags'], queryFn: api.recipeTags });
+
+export const useRecipe = (id: string) => useQuery({ queryKey: ['recipes', 'one', id], queryFn: () => api.recipe(id) });
+
+function useRecipeMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => void client.invalidateQueries({ queryKey: ['recipes'] }),
+  });
+}
+
+export const useCreateRecipe = () => useRecipeMutation(api.createRecipe);
+export const useUpdateRecipe = () => useRecipeMutation(api.updateRecipe);
+export const useDeleteRecipe = () => useRecipeMutation(api.deleteRecipe);
+export const useLogRecipe = () => useLogMutation(api.logRecipe);

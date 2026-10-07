@@ -4,13 +4,14 @@ import { StyleSheet, View } from 'react-native';
 
 import { FoodRow } from '@/components/food-row';
 import { MealRow } from '@/components/meal-row';
+import { RecipeRow } from '@/components/recipe-row';
 import { FormScreen } from '@/components/form-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Button, ErrorText, Loading, TextField } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useDebounced } from '@/hooks/use-debounced';
 import { slotLabel } from '@/lib/nutrition';
-import { useFoodSearch, useOpenFoodFactsSearch, useRecentFoods, useSavedMeals } from '@/lib/queries';
+import { useFoodSearch, useOpenFoodFactsSearch, useRecentFoods, useRecipes, useSavedMeals } from '@/lib/queries';
 import type { Food, SavedMeal, Slot } from '@/lib/types';
 
 export default function AddFoodScreen() {
@@ -21,6 +22,7 @@ export default function AddFoodScreen() {
 
   const recent = useRecentFoods();
   const savedMeals = useSavedMeals();
+  const recipes = useRecipes(q);
   const meals = (savedMeals.data ?? []).filter((m) => m.name.toLowerCase().includes(q.toLowerCase()));
   const local = useFoodSearch(q);
   const off = useOpenFoodFactsSearch(offQuery ?? '', offQuery !== null && offQuery === q);
@@ -61,6 +63,19 @@ export default function AddFoodScreen() {
           <ThemedText type="smallBold">My meals</ThemedText>
           {meals.map((meal) => (
             <MealRow key={meal.id} meal={meal} onPress={() => openMeal(meal)} />
+          ))}
+        </View>
+      )}
+
+      {(recipes.data?.length ?? 0) > 0 && (
+        <View>
+          <ThemedText type="smallBold">My recipes</ThemedText>
+          {recipes.data!.slice(0, 5).map((recipe) => (
+            <RecipeRow
+              key={recipe.id}
+              recipe={recipe}
+              onPress={() => router.push({ pathname: '/recipes/[id]', params: { id: recipe.id, date, slot } })}
+            />
           ))}
         </View>
       )}

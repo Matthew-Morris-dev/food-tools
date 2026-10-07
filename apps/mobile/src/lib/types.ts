@@ -168,3 +168,36 @@ export type ExerciseEntry = {
   minutes: number;
   kcal: number;
 };
+
+export type RecipeIngredient = {
+  id?: string;
+  foodId: string | null;
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  grams: number;
+  note: string | null;
+  food?: Food | null;
+  kcal?: number;
+};
+
+export type RecipeInput = {
+  name: string;
+  servings: number;
+  method: string;
+  tags: string[];
+  cookedWeightG: number | null;
+  sourceUrl: string | null;
+  ingredients: Omit<RecipeIngredient, 'id' | 'food' | 'kcal'>[];
+};
+
+export type Recipe = Omit<RecipeInput, 'ingredients'> & {
+  id: string;
+  totals: Targets;
+  perServing: Targets;
+  per100gCooked: Targets | null;
+  incomplete: boolean;
+  ingredients: RecipeIngredient[];
+};
+
+export type RecipeListItem = Omit<Recipe, 'ingredients' | 'totals' | 'method'> & { ingredientCount: number };
