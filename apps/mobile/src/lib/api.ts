@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 
 import { authClient } from './auth-client';
 import { API_URL } from './config';
+import type { Draft } from './recipe-draft';
 import type {
   BarcodeResult,
   DayTargets,
@@ -114,4 +115,6 @@ export const api = {
   deleteRecipe: (id: string) => apiFetch<void>(`/api/recipes/${id}`, { method: 'DELETE' }),
   logRecipe: ({ id, ...body }: { id: string; date: string; slot: Slot } & ({ servings: number } | { grams: number })) =>
     apiFetch<LogEntry>(`/api/recipes/${id}/log`, json('POST', body)),
+  importRecipe: (source: { url: string } | { text: string }) =>
+    apiFetch<Draft>('/api/recipes/import', json('POST', source)),
 };

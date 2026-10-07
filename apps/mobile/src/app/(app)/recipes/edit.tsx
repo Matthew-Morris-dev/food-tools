@@ -41,6 +41,7 @@ type Initial = {
   sourceUrl: string | null;
   rows: Row[];
   warnings: string[];
+  siteKcal: number | null;
 };
 
 function fromRecipe(r: Recipe): Initial {
@@ -53,6 +54,7 @@ function fromRecipe(r: Recipe): Initial {
     method: r.method,
     sourceUrl: r.sourceUrl,
     warnings: [],
+    siteKcal: null,
     rows: r.ingredients.map((i) => ({
       key: newKey(),
       foodId: i.foodId,
@@ -77,6 +79,7 @@ function fromDraft(d: Draft): Initial {
     method: d.method,
     sourceUrl: d.sourceUrl,
     warnings: d.warnings ?? [],
+    siteKcal: d.siteNutrition?.kcal ?? null,
     rows: d.ingredients.map((i) => ({
       key: newKey(),
       foodId: i.foodId,
@@ -102,6 +105,7 @@ const blank: Initial = {
   sourceUrl: null,
   rows: [],
   warnings: [],
+  siteKcal: null,
 };
 
 export default function EditRecipeScreen() {
@@ -234,6 +238,11 @@ function Editor({ initial, title }: { initial: Initial; title: string }) {
 
       <ThemedText type="smallBold">Per serving</ThemedText>
       {perServing && <NutritionSummary {...perServing} />}
+      {initial.siteKcal !== null && (
+        <ThemedText type="small" themeColor="textSecondary">
+          The website lists {fmt(initial.siteKcal)} kcal per serving. If ours is far off, check the weights below.
+        </ThemedText>
+      )}
       {incomplete && (
         <ThemedText type="small" themeColor="textSecondary">
           Ingredients without a food don&apos;t count towards the numbers yet.
