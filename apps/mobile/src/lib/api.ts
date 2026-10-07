@@ -2,7 +2,19 @@ import { Platform } from 'react-native';
 
 import { authClient } from './auth-client';
 import { API_URL } from './config';
-import type { BarcodeResult, Food, LogEntry, NewCustomFood, SavedMeal, Slot } from './types';
+import type {
+  BarcodeResult,
+  DayTargets,
+  Food,
+  Goal,
+  GoalPlan,
+  LogEntry,
+  NewCustomFood,
+  Profile,
+  SavedMeal,
+  SetupInput,
+  Slot,
+} from './types';
 
 // Calls our API with the signed-in session. Native apps have no cookie jar, so the
 // session cookie Better Auth keeps in SecureStore is attached by hand.
@@ -55,4 +67,14 @@ export const api = {
   deleteSavedMeal: (id: string) => apiFetch<void>(`/api/saved-meals/${id}`, { method: 'DELETE' }),
   logSavedMeal: (id: string, target: { date: string; slot: Slot }) =>
     apiFetch<LogEntry[]>(`/api/saved-meals/${id}/log`, json('POST', target)),
+
+  profile: () => apiFetch<Profile | null>('/api/profile'),
+  setUnits: (units: Partial<Pick<Profile, 'weightUnit' | 'heightUnit'>>) =>
+    apiFetch<Profile>('/api/profile/units', json('PATCH', units)),
+  currentGoal: (date: string) => apiFetch<Goal | null>(`/api/goals/current?date=${date}`),
+  previewGoal: (input: SetupInput) => apiFetch<GoalPlan>('/api/goals/preview', json('POST', input)),
+  saveGoal: (input: SetupInput) => apiFetch<{ goal: Goal; plan: GoalPlan }>('/api/goals', json('POST', input)),
+  dayTargets: (date: string) => apiFetch<DayTargets | null>(`/api/goals/day/${date}`),
+  setTrainingDay: (date: string, trainingDay: boolean | null) =>
+    apiFetch<void>(`/api/goals/day/${date}/training`, json('PUT', { trainingDay })),
 };

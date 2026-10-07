@@ -1,7 +1,7 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api } from './api';
-import type { LogEntry } from './types';
+import type { LogEntry, SetupInput } from './types';
 
 export const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -65,3 +65,51 @@ export const useUpdateEntry = () =>
     api.updateEntry(id, changes),
   );
 export const useDeleteEntry = () => useLogMutation(api.deleteEntry);
+
+export const useProfile = () => useQuery({ queryKey: ['profile'], queryFn: api.profile, staleTime: 5 * 60_000 });
+
+export const useUnits = () => {
+  const { data } = useProfile();
+  return { weightUnit: data?.weightUnit ?? 'kg', heightUnit: data?.heightUnit ?? 'cm' } as const;
+};
+
+export const useCurrentGoal = (date: string) =>
+  useQuery({ queryKey: ['goal', 'current', date], queryFn: () => api.currentGoal(date) });
+
+export const useDayTargets = (date: string) =>
+  useQuery({ queryKey: ['day-targets', date], queryFn: () => api.dayTargets(date) });
+
+export const useGoalPreview = (input: SetupInput | null) =>
+  useQuery({
+    queryKey: ['goal', 'preview', input],
+    queryFn: () => api.previewGoal(input!),
+    enabled: input !== null,
+    staleTime: Infinity,
+    placeholderData: (previous) => previous,
+  });
+
+// Goals feed Today, Progress and the profile, so refresh all of them
+function invalidateGoalData(client: ReturnType<typeof useQueryClient>) {
+  for (const key of ['profile', 'goal', 'day-targets', 'progress', 'weights']) {
+    void client.invalidateQueries({ queryKey: [key] });
+  }
+}
+
+export const useSaveGoal = () => {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: api.saveGoal, onSuccess: () => invalidateGoalData(client) });
+};
+
+export const useSetUnits = () => {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: api.setUnits, onSuccess: () => invalidateGoalData(client) });
+};
+
+export const useSetTrainingDay = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ date, trainingDay }: { date: string; trainingDay: boolean | null }) =>
+      api.setTrainingDay(date, trainingDay),
+    onSuccess: () => void client.invalidateQueries({ queryKey: ['day-targets'] }),
+  });
+};

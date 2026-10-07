@@ -5,13 +5,13 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Placeholder, Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Card, ErrorText, Loading } from '@/components/ui';
+import { Card, Chip, ErrorText, Loading } from '@/components/ui';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { authClient } from '@/lib/auth-client';
 import { addDays, dayLabel, today } from '@/lib/dates';
 import { fmt, SLOTS, slotForNow, sum } from '@/lib/nutrition';
-import { useDayLog } from '@/lib/queries';
+import { useDayLog, useDayTargets, useSetTrainingDay } from '@/lib/queries';
 import type { LogEntry, Slot } from '@/lib/types';
 
 export default function TodayScreen() {
@@ -20,6 +20,8 @@ export default function TodayScreen() {
   const initial = session?.user.name.trim().charAt(0).toUpperCase() || '?';
   const [date, setDate] = useState(today);
   const { data: entries, isPending, error } = useDayLog(date);
+  const { data: day } = useDayTargets(date);
+  const setTrainingDay = useSetTrainingDay();
 
   const add = (slot: Slot) => router.push({ pathname: '/log/add', params: { date, slot } });
   const totals = sum(entries ?? []);
@@ -56,16 +58,47 @@ export default function TodayScreen() {
         </Pressable>
       </View>
 
-      <Card>
-        <ThemedText type="subtitle">{fmt(totals.kcal)} kcal</ThemedText>
-        <View style={styles.macros}>
-          <Macro label="Protein" grams={totals.protein} />
-          <Macro label="Carbs" grams={totals.carbs} />
-          <Macro label="Fat" grams={totals.fat} />
+      {day?.hasSchedule && (
+        <View style={styles.chipRow}>
+          <Chip
+            label={day.trainingDay ? 'Training day' : 'Rest day'}
+            selected={day.trainingDay}
+            onPress={() => setTrainingDay.mutate({ date, trainingDay: !day.trainingDay })}
+          />
         </View>
-        <ThemedText type="small" themeColor="textSecondary">
-          Daily targets will appear here once goals are set up.
-        </ThemedText>
+      )}
+
+      <Card>
+        {day ? (
+          <>
+            <ThemedText type="subtitle">
+              {fmt(totals.kcal)} <ThemedText type="small" themeColor="textSecondary">{`/ ${fmt(day.targets.kcal)} kcal`}</ThemedText>
+            </ThemedText>
+            <ProgressBar value={totals.kcal} target={day.targets.kcal} />
+            <ThemedText type="small" themeColor="textSecondary">
+              {totals.kcal > day.targets.kcal
+                ? `${fmt(totals.kcal - day.targets.kcal)} kcal above target`
+                : `${fmt(day.targets.kcal - totals.kcal)} kcal left`}
+            </ThemedText>
+            <View style={styles.macros}>
+              <Macro label="Protein" grams={totals.protein} target={day.targets.protein} />
+              <Macro label="Carbs" grams={totals.carbs} target={day.targets.carbs} />
+              <Macro label="Fat" grams={totals.fat} target={day.targets.fat} />
+            </View>
+          </>
+        ) : (
+          <>
+            <ThemedText type="subtitle">{fmt(totals.kcal)} kcal</ThemedText>
+            <View style={styles.macros}>
+              <Macro label="Protein" grams={totals.protein} />
+              <Macro label="Carbs" grams={totals.carbs} />
+              <Macro label="Fat" grams={totals.fat} />
+            </View>
+            <Link href="/goal/setup">
+              <ThemedText type="linkPrimary">Set a goal to see daily targets</ThemedText>
+            </Link>
+          </>
+        )}
       </Card>
 
       <ErrorText error={error} />
@@ -87,10 +120,21 @@ export default function TodayScreen() {
   );
 }
 
-function Macro({ label, grams }: { label: string; grams: number }) {
+// Neutral colours throughout: going over a target is information, not an error
+function ProgressBar({ value, target }: { value: number; target: number }) {
+  const theme = useTheme();
+  const pct = Math.min(100, target > 0 ? (value / target) * 100 : 0);
+  return (
+    <View style={[styles.bar, { backgroundColor: theme.backgroundSelected }]}>
+      <View style={[styles.barFill, { width: `${pct}%`, backgroundColor: theme.text }]} />
+    </View>
+  );
+}
+
+function Macro({ label, grams, target }: { label: string; grams: number; target?: number }) {
   return (
     <View>
-      <ThemedText type="smallBold">{fmt(grams)} g</ThemedText>
+      <ThemedText type="smallBold">{target === undefined ? `${fmt(grams)} g` : `${fmt(grams)} / ${fmt(target)} g`}</ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
         {label}
       </ThemedText>
@@ -158,6 +202,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
   },
   macros: { flexDirection: 'row', gap: Spacing.five },
+  chipRow: { flexDirection: 'row' },
+  bar: { height: 8, borderRadius: 4, overflow: 'hidden' },
+  barFill: { height: 8, borderRadius: 4 },
   section: { gap: Spacing.one },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionActions: { flexDirection: 'row', gap: Spacing.four },
