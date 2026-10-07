@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, asc, between, eq, gte, sql } from "drizzle-orm";
+import { and, asc, between, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -17,20 +17,15 @@ const weightKg = z.number().min(20).max(500);
 export const weightRoutes = new Hono<AuthEnv>()
   .use(requireSession)
 
+  // The trend needs the week before `from`, so it's computed over everything first
   .get("/", zValidator("query", z.object({ from: day.optional(), to: day.optional() })), async (c) => {
     const { from, to } = c.req.valid("query");
     const rows = await db
       .select({ date: weightEntries.date, weightKg: weightEntries.weightKg })
       .from(weightEntries)
-      .where(
-        and(
-          eq(weightEntries.userId, c.get("session").user.id),
-          from ? gte(weightEntries.date, from) : undefined,
-          to ? sql`${weightEntries.date} <= ${to}` : undefined,
-        ),
-      )
+      .where(eq(weightEntries.userId, c.get("session").user.id))
       .orderBy(asc(weightEntries.date));
-    return c.json(withTrend(rows));
+    return c.json(withTrend(rows).filter((w) => (!from || w.date >= from) && (!to || w.date <= to)));
   })
 
   .put("/:date", zValidator("param", z.object({ date: day })), zValidator("json", z.object({ weightKg })), async (c) => {

@@ -12,6 +12,8 @@ export default function AppLayout() {
       <Stack.Screen name="log/entry/[id]" options={{ title: 'Edit entry' }} />
       <Stack.Screen name="foods/new" options={{ title: 'New food' }} />
       <Stack.Screen name="goal/setup" options={{ title: 'Your goal' }} />
+      <Stack.Screen name="weights/index" options={{ title: 'Weigh-ins' }} />
+      <Stack.Screen name="weights/log" options={{ title: 'Log weight' }} />
       <Stack.Screen name="support" options={{ title: 'Support' }} />
       <Stack.Screen name="meals/new" options={{ title: 'Save meal' }} />
       <Stack.Screen name="meals/[id]" options={{ title: 'Meal' }} />

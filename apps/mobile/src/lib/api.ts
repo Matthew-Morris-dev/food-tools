@@ -11,9 +11,12 @@ import type {
   LogEntry,
   NewCustomFood,
   Profile,
+  Progress,
+  ProgressRange,
   SavedMeal,
   SetupInput,
   Slot,
+  WeightPoint,
 } from './types';
 
 // Calls our API with the signed-in session. Native apps have no cookie jar, so the
@@ -77,4 +80,10 @@ export const api = {
   dayTargets: (date: string) => apiFetch<DayTargets | null>(`/api/goals/day/${date}`),
   setTrainingDay: (date: string, trainingDay: boolean | null) =>
     apiFetch<void>(`/api/goals/day/${date}/training`, json('PUT', { trainingDay })),
+
+  weights: () => apiFetch<WeightPoint[]>('/api/weights'),
+  saveWeight: ({ date, weightKg }: { date: string; weightKg: number }) =>
+    apiFetch<{ date: string; weightKg: number }>(`/api/weights/${date}`, json('PUT', { weightKg })),
+  deleteWeight: (date: string) => apiFetch<void>(`/api/weights/${date}`, { method: 'DELETE' }),
+  progress: (date: string, range: ProgressRange) => apiFetch<Progress>(`/api/progress?date=${date}&range=${range}`),
 };

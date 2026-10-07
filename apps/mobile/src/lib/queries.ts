@@ -1,7 +1,7 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api } from './api';
-import type { LogEntry, SetupInput } from './types';
+import type { LogEntry, ProgressRange, SetupInput } from './types';
 
 export const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -113,3 +113,22 @@ export const useSetTrainingDay = () => {
     onSuccess: () => void client.invalidateQueries({ queryKey: ['day-targets'] }),
   });
 };
+
+export const useProgress = (date: string, range: ProgressRange) =>
+  useQuery({ queryKey: ['progress', date, range], queryFn: () => api.progress(date, range) });
+
+export const useWeights = () => useQuery({ queryKey: ['weights'], queryFn: api.weights });
+
+function useWeightMutation<TArgs>(fn: (args: TArgs) => Promise<unknown>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['weights'] });
+      void client.invalidateQueries({ queryKey: ['progress'] });
+    },
+  });
+}
+
+export const useSaveWeight = () => useWeightMutation(api.saveWeight);
+export const useDeleteWeight = () => useWeightMutation(api.deleteWeight);

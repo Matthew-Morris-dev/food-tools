@@ -120,3 +120,16 @@ export type DayTargets = {
   exerciseKcal: number;
   exerciseAddsToAllowance: boolean;
 };
+
+export type WeightPoint = { date: string; weightKg: number; trendKg: number };
+
+export type Progress = {
+  goal: Goal | null;
+  weights: WeightPoint[];
+  latest: WeightPoint | null;
+  changeSinceStartKg: number | null;
+  intake: { days: number; avgKcal: number; avgTargetKcal: number } | null;
+  proteinHitRate: { hit: number; days: number } | null;
+};
+
+export type ProgressRange = '4w' | '12w' | 'all';
