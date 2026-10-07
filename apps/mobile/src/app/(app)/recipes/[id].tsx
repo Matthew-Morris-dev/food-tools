@@ -6,9 +6,11 @@ import { FormScreen } from '@/components/form-screen';
 import { NutritionSummary } from '@/components/nutrition-summary';
 import { SlotPicker } from '@/components/slot-picker';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { Button, Card, Chip, ChipRow, ErrorText, Loading, TextField } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { today } from '@/lib/dates';
+import { methodSteps } from '@/lib/method';
 import { fmt, parseNumber, slotForNow, slotLabel } from '@/lib/nutrition';
 import { useDeleteRecipe, useLogRecipe, useRecipe } from '@/lib/queries';
 import type { Recipe, RecipeIngredient, Slot } from '@/lib/types';
@@ -119,10 +121,17 @@ function RecipeDetail({ recipe, date, initialSlot }: { recipe: Recipe; date: str
         ))}
       </View>
 
-      {recipe.method.trim() !== '' && (
+      {methodSteps(recipe.method).length > 0 && (
         <View style={styles.method}>
           <ThemedText type="smallBold">Method</ThemedText>
-          <ThemedText>{recipe.method}</ThemedText>
+          {methodSteps(recipe.method).map((step, i) => (
+            <View key={i} style={styles.step}>
+              <ThemedView type="backgroundSelected" style={styles.stepNumber}>
+                <ThemedText type="smallBold">{i + 1}</ThemedText>
+              </ThemedView>
+              <ThemedText style={styles.stepText}>{step}</ThemedText>
+            </View>
+          ))}
         </View>
       )}
 
@@ -151,5 +160,8 @@ const styles = StyleSheet.create({
   stepper: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   ingredient: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
   ingredientText: { flex: 1, gap: Spacing.half },
-  method: { gap: Spacing.one },
+  method: { gap: Spacing.three },
+  step: { flexDirection: 'row', gap: Spacing.three, alignItems: 'flex-start' },
+  stepNumber: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  stepText: { flex: 1 },
 });

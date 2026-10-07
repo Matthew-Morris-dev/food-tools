@@ -7,6 +7,7 @@ import { NutritionSummary } from '@/components/nutrition-summary';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Chip, ChipRow, ErrorText, Loading, TextField } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
+import { methodSteps, stepsToMethod } from '@/lib/method';
 import { fmt, forGrams, parseNumber, SLOTS, sum } from '@/lib/nutrition';
 import { pickFood } from '@/lib/pick-food';
 import { useCreateRecipe, useRecipe, useUpdateRecipe } from '@/lib/queries';
@@ -139,7 +140,7 @@ function Editor({ initial, title }: { initial: Initial; title: string }) {
   const [servingsText, setServingsText] = useState(String(initial.servings));
   const [cookedText, setCookedText] = useState(initial.cookedWeightG ? String(initial.cookedWeightG) : '');
   const [tagsText, setTagsText] = useState(initial.tags.join(', '));
-  const [method, setMethod] = useState(initial.method);
+  const [steps, setSteps] = useState<string[]>(() => methodSteps(initial.method));
   const [slots, setSlots] = useState<Slot[]>(initial.slots);
   const [preference, setPreference] = useState<RecipePreference>(initial.preference);
   const [rows, setRows] = useState<Row[]>(initial.rows);
@@ -203,7 +204,7 @@ function Editor({ initial, title }: { initial: Initial; title: string }) {
     const input = {
       name: name.trim(),
       servings,
-      method,
+      method: stepsToMethod(steps),
       tags: tagsText.split(',').map((t) => t.trim()).filter(Boolean),
       cookedWeightG: cooked,
       slots,
@@ -328,7 +329,35 @@ function Editor({ initial, title }: { initial: Initial; title: string }) {
       ))}
       <Button title="+ Add ingredient" variant="secondary" onPress={() => choose()} />
 
-      <TextField label="Method" value={method} onChangeText={setMethod} multiline style={styles.method} />
+      <ThemedText type="smallBold">Method</ThemedText>
+      {steps.map((step, i) => (
+        <Card key={i}>
+          <TextField
+            label={`Step ${i + 1}`}
+            value={step}
+            onChangeText={(v) => setSteps((prev) => prev.map((x, j) => (j === i ? v : x)))}
+            multiline
+            style={styles.step}
+          />
+          <View style={styles.stepActions}>
+            {i > 0 && (
+              <Pressable
+                hitSlop={8}
+                onPress={() => setSteps((prev) => prev.map((x, j) => (j === i - 1 ? prev[i] : j === i ? prev[i - 1] : x)))}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Move up
+                </ThemedText>
+              </Pressable>
+            )}
+            <Pressable hitSlop={8} onPress={() => setSteps((prev) => prev.filter((_, j) => j !== i))}>
+              <ThemedText type="small" themeColor="textSecondary">
+                Remove
+              </ThemedText>
+            </Pressable>
+          </View>
+        </Card>
+      ))}
+      <Button title="+ Add step" variant="secondary" onPress={() => setSteps((prev) => [...prev, ''])} />
 
       <ErrorText error={create.error ?? update.error} />
       <Button title="Save recipe" onPress={save} disabled={!valid} loading={saving} />
@@ -338,6 +367,7 @@ function Editor({ initial, title }: { initial: Initial; title: string }) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: Spacing.two },
-  method: { minHeight: 140, textAlignVertical: 'top' },
+  step: { minHeight: 70, textAlignVertical: 'top' },
+  stepActions: { flexDirection: 'row', gap: Spacing.four },
   pressed: { opacity: 0.6 },
 });
