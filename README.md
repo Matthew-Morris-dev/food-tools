@@ -49,6 +49,10 @@ Checks: `npm run typecheck`, `npm run lint` and `npm test`.
 
 Recipe import reads most recipe sites and pasted text without any AI. If you add an `ANTHROPIC_API_KEY` to `.env` (create one at [platform.claude.com](https://platform.claude.com/)), pages with no recipe data and messy pasted text can fall back to Claude (Haiku 4.5). Only the recipe text is sent to Anthropic, and a recipe costs a fraction of a penny. Leave the key empty and the feature stays off.
 
+## Contributing
+
+Work is tracked in [GitHub Issues](https://github.com/Matthew-Morris-dev/food-tools/issues), grouped by milestone. [AGENTS.md](AGENTS.md) has the layout, commands, conventions and gotchas for anyone working on the code, human or AI.
+
 ## License
 
 The code is under the [MIT License](LICENSE): use, copy, change and share it however you like. The food data keeps its own licences, listed above.
