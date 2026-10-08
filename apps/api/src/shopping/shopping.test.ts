@@ -75,9 +75,9 @@ describe("packs", () => {
 
 describe("links", () => {
   it("builds encoded search addresses", () => {
-    expect(searchUrl("tesco", "chicken breast")).toBe("https://www.tesco.com/groceries/en-GB/search?query=chicken%20breast");
-    expect(searchUrl("sainsburys", "mac & cheese")).toContain("mac%20%26%20cheese");
-    expect(searchUrl("ocado", " milk ")).toBe("https://www.ocado.com/search?entry=milk");
+    expect(searchUrl("tesco", "chicken breast")).toBe("https://www.tesco.com/shop/en-GB/search?query=chicken%20breast");
+    expect(searchUrl("sainsburys", "mac & cheese")).toBe("https://www.sainsburys.co.uk/groceries/search?searchTerm=mac%20%26%20cheese");
+    expect(searchUrl("ocado", " milk ")).toBe("https://www.ocado.com/search?q=milk");
   });
 
   it("accepts a product page on the supermarket's own site", () => {

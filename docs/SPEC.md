@@ -95,8 +95,8 @@ Getting items into a basket:
 
 | Option | How it works | Effort | Reliability |
 | --- | --- | --- | --- |
-| Search links (v1) | Each item opens a search for it on Tesco, Sainsbury's or Ocado in the app or browser | Low | High; only the search URL format can change |
-| Remembered products (v1.1) | When you pick a product once, the app saves its link so next time it opens that exact product | Low | High |
+| Search links (v1) | Each item opens a search for it on Tesco, Sainsbury's or Ocado in the app or browser | Low | High; only the search URL format can change (built, 8 Oct 2026) |
+| Remembered products (v1.1) | When you pick a product once, the app saves its link so next time it opens that exact product | Low | High (built, 8 Oct 2026) |
 | Whisk / Samsung Food (v2, to explore) | Samsung Food's shopping lists can already be sent to Tesco, Ocado, Sainsbury's and Amazon Fresh baskets in the UK; Whisk sells this to businesses, so access for a small app is unconfirmed | Medium | High if granted |
 | Browser automation (v2, optional) | An assistant such as Claude in Chrome adds items in your own logged-in browser, on request | Medium | Breaks when sites change |
 | Unofficial APIs (not recommended) | Community tools such as basketeer call Tesco's private site API directly | Medium | Fragile; may breach site terms and risk your account |
@@ -254,3 +254,20 @@ The biggest product risk is the basket feature promising more than the supermark
 - **Recipes** gained meal slots (which meals they suit) and a like/OK/avoid setting.
 - **Today** shows pending planned meals in each slot with Log, and a "Log all planned meals" button.
 - **Not yet built:** the shopping list (next), planning saved meals, and a cost estimate.
+
+## As built: shopping list (8 Oct 2026)
+
+- **Worked out from the plan every time it's opened**, never copied, so changing the plan changes the list with no "regenerate". What's stored is only what the user decides: ticks, their own items, pantry, pack sizes, aisle changes and saved product links. Ticks and preferences are keyed by food, so they carry across recipes and weeks.
+- **What gets bought:**
+  - Meals already logged as eaten are left out.
+  - A cook is bought for once, at its own servings plus all its leftovers (a recipe that makes 4 but is planned as 1 + 1.75 leftovers buys for 2.75).
+  - A leftover whose cook is gone counts as its own cook.
+  - Single foods go in by weight.
+  - On the current week, days already passed are skipped unless switched off.
+  - The same food merges across recipes, shown as a count when everything was counted ("4 onions") and as a weight otherwise.
+- **Aisles** come from keyword rules (Fruit and veg, Meat and fish, Dairy and eggs, Bakery, Rice, pasta and dry goods, Tins and jars, Oils and sauces, Herbs and spices, Frozen, Drinks, Snacks and sweets, Household, Other) and can be changed per item.
+- **Pack sizes** round up to how things are sold from a built-in table of common UK sizes, or the user's own pack size. A hair over a pack (5%) doesn't need another: 700 g of chicken shows "Buy 3 × 250 g" with a 250 g pack set, or "2 × 300 g" with the default.
+- **Pantry** hides things you always have in a collapsed section.
+- **Supermarket links:** no default store; each item offers Tesco, Sainsbury's and Ocado. A button opens a search for the item, or the product the user saved. A saved link must be an https page on that supermarket's own site. The search addresses are in one config file and were checked in a real browser on 8 Oct 2026 (Tesco `/shop/en-GB/search?query=`, Sainsbury's `/groceries/search?searchTerm=`, Ocado `/search?q=`); the sites block scripts, so a future change shows up as a search that lands on a home or category page.
+- **Share as text** gives a plain list with ticks, for notes apps or shopping elsewhere.
+- **Still not built:** filling a basket automatically, estimating the cost, and aisle order per supermarket.
