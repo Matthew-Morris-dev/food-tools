@@ -26,7 +26,9 @@ import type {
   RecipeListItem,
   SavedMeal,
   SetupInput,
+  ShoppingList,
   Slot,
+  StoreId,
   WeightPoint,
 } from './types';
 
@@ -151,4 +153,15 @@ export const api = {
   deleteTemplate: (id: string) => apiFetch<void>(`/api/plan/templates/${id}`, { method: 'DELETE' }),
   applyTemplate: ({ id, ...body }: { id: string; date: string; replace: boolean }) =>
     apiFetch<{ ids: string[]; added: number; skipped: number; replaced: number }>(`/api/plan/templates/${id}/apply`, json('POST', body)),
+  shopping: (date: string, from?: string) => apiFetch<ShoppingList>(`/api/shopping?date=${date}${from ? `&from=${from}` : ''}`),
+  shoppingText: (date: string, from?: string) => apiFetch<{ text: string }>(`/api/shopping/text?date=${date}${from ? `&from=${from}` : ''}`),
+  tickItem: (body: { date: string; key: string; ticked: boolean }) => apiFetch<void>('/api/shopping/ticks', json('PUT', body)),
+  clearTicks: (date: string) => apiFetch<void>('/api/shopping/ticks/clear', json('POST', { date })),
+  setItemPref: (body: { key: string; name: string; aisle?: string | null; packGrams?: number | null; inPantry?: boolean }) =>
+    apiFetch<void>('/api/shopping/prefs', json('PUT', body)),
+  addShoppingItem: (body: { date: string; name: string }) => apiFetch<{ id: string }>('/api/shopping/items', json('POST', body)),
+  updateShoppingItem: ({ id, ...changes }: { id: string; ticked?: boolean; aisle?: string | null }) =>
+    apiFetch<{ id: string }>(`/api/shopping/items/${id}`, json('PATCH', changes)),
+  deleteShoppingItem: (id: string) => apiFetch<void>(`/api/shopping/items/${id}`, { method: 'DELETE' }),
+  saveProduct: (body: { key: string; store: StoreId; url: string | null }) => apiFetch<void>('/api/shopping/products', json('PUT', body)),
 };

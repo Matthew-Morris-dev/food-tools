@@ -1,7 +1,7 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api } from './api';
-import type { ExerciseActivity, LogEntry, ProgressRange, SetupInput } from './types';
+import type { ExerciseActivity, LogEntry, ProgressRange, SetupInput, ShoppingItem, ShoppingList } from './types';
 
 export const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -174,7 +174,10 @@ function useRecipeMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>
   const client = useQueryClient();
   return useMutation({
     mutationFn: fn,
-    onSuccess: () => void client.invalidateQueries({ queryKey: ['recipes'] }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['recipes'] });
+      void client.invalidateQueries({ queryKey: ['shopping'] });
+    },
   });
 }
 
@@ -193,6 +196,7 @@ function usePlanMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>, 
     mutationFn: fn,
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ['plan'] });
+      void client.invalidateQueries({ queryKey: ['shopping'] });
       if (alsoDiary) {
         void client.invalidateQueries({ queryKey: ['log'] });
         void client.invalidateQueries({ queryKey: ['foods', 'recent'] });
@@ -218,3 +222,39 @@ export const usePlanTemplates = () => useQuery({ queryKey: ['plan', 'templates']
 export const useSaveTemplate = () => usePlanMutation(api.saveTemplate);
 export const useDeleteTemplate = () => usePlanMutation(api.deleteTemplate);
 export const useApplyTemplate = () => usePlanMutation(api.applyTemplate);
+
+export const useShopping = (date: string, from?: string) =>
+  useQuery({ queryKey: ['shopping', date, from ?? null], queryFn: () => api.shopping(date, from) });
+
+function useShoppingMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: fn, onSuccess: () => void client.invalidateQueries({ queryKey: ['shopping'] }) });
+}
+
+// Ticking in a shop should feel instant, so the tick shows before the server answers
+function useOptimisticTick<TArgs extends { ticked: boolean }>(fn: (args: TArgs) => Promise<unknown>, matches: (args: TArgs, item: ShoppingItem) => boolean) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onMutate: (args) => {
+      client.setQueriesData<ShoppingList>({ queryKey: ['shopping'] }, (list) =>
+        list && {
+          ...list,
+          aisles: list.aisles.map((a) => ({ ...a, items: a.items.map((i) => (matches(args, i) ? { ...i, ticked: args.ticked } : i)) })),
+          totals: list.totals,
+        },
+      );
+    },
+    onSettled: () => void client.invalidateQueries({ queryKey: ['shopping'] }),
+  });
+}
+
+export const useTickItem = () => useOptimisticTick(api.tickItem, (args, item) => item.key === args.key);
+export const useTickOwnItem = () =>
+  useOptimisticTick(({ id, ticked }: { id: string; ticked: boolean }) => api.updateShoppingItem({ id, ticked }), (args, item) => item.manualId === args.id);
+export const useClearTicks = () => useShoppingMutation(api.clearTicks);
+export const useSetItemPref = () => useShoppingMutation(api.setItemPref);
+export const useAddShoppingItem = () => useShoppingMutation(api.addShoppingItem);
+export const useUpdateShoppingItem = () => useShoppingMutation(api.updateShoppingItem);
+export const useDeleteShoppingItem = () => useShoppingMutation(api.deleteShoppingItem);
+export const useSaveProduct = () => useShoppingMutation(api.saveProduct);

@@ -247,3 +247,30 @@ export type NewPlanEntry = {
   leftoverOfId?: string;
   locked?: boolean;
 };
+
+export type StoreId = 'tesco' | 'sainsburys' | 'ocado';
+
+export type StoreLink = { label: string; url: string; saved: boolean };
+
+export type ShoppingItem = {
+  key: string;
+  manualId: string | null;
+  name: string;
+  aisle: string;
+  amount: string;
+  buy: string | null;
+  packGrams: number | null;
+  defaultPackLabel: string | null;
+  ticked: boolean;
+  inPantry: boolean;
+  sources: { label: string; dates: string[] }[];
+  links: Record<StoreId, StoreLink>;
+};
+
+export type ShoppingList = {
+  weekStart: string;
+  from: string | null;
+  aisles: { aisle: string; items: ShoppingItem[] }[];
+  pantry: ShoppingItem[];
+  totals: { total: number; ticked: number };
+};
