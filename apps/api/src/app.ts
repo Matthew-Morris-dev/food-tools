@@ -12,6 +12,7 @@ import { plannerRoutes } from "./routes/planner";
 import { checkInRoutes, progressRoutes, weightRoutes } from "./routes/progress";
 import { recipeRoutes } from "./routes/recipes";
 import { savedMealRoutes } from "./routes/saved-meals";
+import { shoppingRoutes } from "./routes/shopping";
 
 export const app = new Hono()
   .use(
@@ -37,6 +38,7 @@ export const app = new Hono()
   .route("/api/exercise", exerciseRoutes)
   .route("/api/saved-meals", savedMealRoutes)
   .route("/api/recipes", recipeRoutes)
-  .route("/api/plan", plannerRoutes);
+  .route("/api/plan", plannerRoutes)
+  .route("/api/shopping", shoppingRoutes);
 
 export type AppType = typeof app;

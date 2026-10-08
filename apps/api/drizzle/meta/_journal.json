@@ -43,6 +43,13 @@
       "when": 1791386709863,
       "tag": "0005_planner",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791448647365,
+      "tag": "0006_shopping",
+      "breakpoints": true
     }
   ]
 }
